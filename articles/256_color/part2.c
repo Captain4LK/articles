@@ -1,0 +1,540 @@
+///////////////////////
+/// # 256 color graphics - Part 2 - Initial setup: graphics output and input
+///
+/// Introduction
+/// ---------------------------
+///
+/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
+///
+/// Headers
+/// ---------------------------
+/// 
+/// First, we are going to need to include some headers:
+///<C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <SDL2/SDL.h>
+///>
+///
+/// Constants
+/// ---------------------------
+///
+/// Additionally, we need to define some constants:
+///
+/// Most of these could be implemented as variables instead, but I want to keep the code simple.
+///
+///<C
+#define RCG_XRES 320
+#define RCG_YRES 240
+#define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
+///>
+///
+/// Typedefs
+/// ---------------------------
+///<C
+//I don't like using sdl scancodes directly, so we are going to remap keys to our own enums
+typedef enum 
+{
+   RCG_KEY_NONE,
+
+   //Keyboard keys
+   RCG_KEY_A,RCG_KEY_B,RCG_KEY_C,RCG_KEY_D,RCG_KEY_E,RCG_KEY_F,RCG_KEY_G,
+   RCG_KEY_H,RCG_KEY_I,RCG_KEY_J,RCG_KEY_K,RCG_KEY_L,RCG_KEY_M,RCG_KEY_N,
+   RCG_KEY_O,RCG_KEY_P,RCG_KEY_Q,RCG_KEY_R,RCG_KEY_S,RCG_KEY_T,RCG_KEY_U,
+   RCG_KEY_V,RCG_KEY_W,RCG_KEY_X,RCG_KEY_Y,RCG_KEY_Z,
+   RCG_KEY_0,RCG_KEY_1,RCG_KEY_2,RCG_KEY_3,RCG_KEY_4,RCG_KEY_5,
+   RCG_KEY_6,RCG_KEY_7,RCG_KEY_8,RCG_KEY_9, RCG_KEY_COMMA, RCG_KEY_PERIOD,
+   RCG_KEY_F1,RCG_KEY_F2,RCG_KEY_F3,RCG_KEY_F4,RCG_KEY_F5,RCG_KEY_F6,
+   RCG_KEY_F7,RCG_KEY_F8,RCG_KEY_F9,RCG_KEY_F10,RCG_KEY_F11,RCG_KEY_F12,
+   RCG_KEY_UP,RCG_KEY_DOWN,RCG_KEY_LEFT,RCG_KEY_RIGHT,
+   RCG_KEY_SPACE,RCG_KEY_TAB,RCG_KEY_LSHIFT,RCG_KEY_RSHIFT,RCG_KEY_LCTRL,RCG_KEY_RCTRL,
+   RCG_KEY_LALT, RCG_KEY_RALT, RCG_KEY_INS,
+   RCG_KEY_DEL,RCG_KEY_HOME,RCG_KEY_END,RCG_KEY_PGUP,RCG_KEY_PGDN,
+   RCG_KEY_BACK,RCG_KEY_ESCAPE,RCG_KEY_RETURN,RCG_KEY_ENTER,RCG_KEY_PAUSE,RCG_KEY_SCROLL,
+   RCG_KEY_NP0,RCG_KEY_NP1,RCG_KEY_NP2,RCG_KEY_NP3,RCG_KEY_NP4,RCG_KEY_NP5,RCG_KEY_NP6,RCG_KEY_NP7,RCG_KEY_NP8,RCG_KEY_NP9,
+   RCG_KEY_NP_MUL,RCG_KEY_NP_DIV,RCG_KEY_NP_ADD,RCG_KEY_NP_SUB,RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
+
+   //Mouse buttons
+   //Functions for reading input won't differentiate between mouse and keyboard input.
+   //This makes remapping keys easier, which won't be discussed in this series, though.
+   RCG_BUTTON_LEFT,RCG_BUTTON_RIGHT,RCG_BUTTON_MIDDLE,RCG_BUTTON_X1,RCG_BUTTON_X2,
+
+   //Last element, will be used as size for mapping array
+   RCG_KEY_MAX,
+}RCG_key;
+
+typedef struct
+{
+   uint8_t r,g,b,a;
+}RCG_color;
+///>
+/// Function prototypes
+/// ---------------------------
+///
+/// These functions will be exposed to the user
+///
+///<C
+//Creates a sdl window, the framebuffer and initializes keycode LUTs
+void RCG_init(const char *title);
+
+//
+void RCG_update();
+
+//Returns, whether the app should keep running
+int RCG_running();
+
+//Makes RCG_running return false
+void RCG_quit();
+
+//Uploads the framebuffer to the screen
+void RCG_render_present();
+
+//Input
+void RCG_mouse_relative(int relative);
+
+void RCG_mouse_show(int show);
+
+int RCG_key_down(RCG_key key);
+
+int RCG_key_pressed(RCG_key key);
+
+int RCG_key_released(RCG_key key);
+
+int RCG_mouse_wheel_scroll();
+
+void RCG_mouse_pos(int *x, int *y);
+
+void RCG_mouse_relative_pos(int *x, int *y);
+
+//Returns a pointer to the framebuffer
+uint8_t *RCG_framebuffer();
+///>
+/// Helper function prototypes
+/// ---------------------------
+///
+/// These are internal helper functions (identifiable by the lowercase prefix)
+///
+///<C
+//Calculates the framebuffers position in the window
+static void rcg_update_viewport();
+///>
+///
+/// Variables
+/// ---------------------------
+///
+/// Now, a few variables
+///
+///<C
+static SDL_Window *rcg_sdl_window;
+static SDL_Renderer *rcg_sdl_renderer;
+static SDL_Texture *rcg_sdl_texture;
+static uint8_t rcg_key_map[SDL_NUM_SCANCODES];
+static uint8_t rcg_mouse_map[6];
+static uint8_t rcg_new_key_state[RCG_KEY_MAX];
+static uint8_t rcg_old_key_state[RCG_KEY_MAX];
+
+static int rcg_running = 1;
+static int rcg_window_width;
+static int rcg_window_height;
+static int rcg_view_x;
+static int rcg_view_y;
+static int rcg_view_width;
+static int rcg_view_height;
+static float rcg_pixel_scale;
+
+static int rcg_mouse_x_rel;
+static int rcg_mouse_y_rel;
+static int rcg_mouse_x;
+static int rcg_mouse_y;
+static int rcg_mouse_wheel;
+
+static uint64_t rcg_frametime;
+static uint64_t rcg_framedelay;
+static uint64_t rcg_framestart;
+
+static uint8_t *rcg_framebuffer = NULL;
+///>
+///
+/// Implementation
+/// ---------------------------
+///
+/// Finally, some code! (I can barely believe it myself)
+///
+/// We start of with RCG_init(), it creates a window, allocates the framebuffer and initializes some LUTs. 
+///<C
+void RCG_init(const char *title)
+{
+///>
+/// First, some SDL2 boilerplate code, error checking and handling is left as an exercise for the reader
+///<C
+   Uint32 flags = SDL_INIT_VIDEO|SDL_INIT_EVENTS;
+   SDL_Init(flags);
+
+   //Calculate max possible window scale
+   //This code is not necessary needed, sine the window will be resizable
+   //It's only here to make the window not be tiny on high-res displays
+   int scale = 1;
+   int max_x,max_y;
+   SDL_Rect max_size;
+   SDL_GetDisplayUsableBounds(0,&max_size);
+   max_x = max_size.w/RCG_XRES;
+   max_y = max_size.h/RCG_YRES;
+   scale = (max_x>max_y)?max_y:max_x;
+
+   //Create window, renderer and texture for framebuffer
+   rcg_sdl_window = SDL_CreateWindow(title,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,RCG_XRES*scale,RCG_YRES*scale,SDL_WINDOW_RESIZABLE);
+   rcg_sdl_renderer = SDL_CreateRenderer(rcg_sdl_window,-1,SDL_RENDERER_ACCELERATED);
+   SDL_SetRenderDrawColor(rcg_sdl_renderer,0,0,0,0);
+   rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer,SDL_PIXELFORMAT_RGBA32,SDL_TEXTUREACCESS_STREAMING,RCG_XRES,RCG_YRES);
+   SDL_SetTextureBlendMode(rcg_sdl_texture,SDL_BLENDMODE_NONE);
+
+   //Implementation will be discussed later in this article.
+   rcg_update_viewport();
+
+   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
+
+   rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
+   memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
+
+///>
+/// Now we are going to initialize the key mapping arrays, just copy paste this code
+///<C
+   rcg_key_map[0x00] = RCG_KEY_NONE;
+   rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
+   rcg_key_map[SDL_SCANCODE_B] = RCG_KEY_B;
+   rcg_key_map[SDL_SCANCODE_C] = RCG_KEY_C;
+   rcg_key_map[SDL_SCANCODE_D] = RCG_KEY_D;
+   rcg_key_map[SDL_SCANCODE_E] = RCG_KEY_E;
+   rcg_key_map[SDL_SCANCODE_F] = RCG_KEY_F;
+   rcg_key_map[SDL_SCANCODE_G] = RCG_KEY_G;
+   rcg_key_map[SDL_SCANCODE_H] = RCG_KEY_H;
+   rcg_key_map[SDL_SCANCODE_I] = RCG_KEY_I;
+   rcg_key_map[SDL_SCANCODE_J] = RCG_KEY_J;
+   rcg_key_map[SDL_SCANCODE_K] = RCG_KEY_K;
+   rcg_key_map[SDL_SCANCODE_L] = RCG_KEY_L;
+   rcg_key_map[SDL_SCANCODE_M] = RCG_KEY_M;
+   rcg_key_map[SDL_SCANCODE_N] = RCG_KEY_N;
+   rcg_key_map[SDL_SCANCODE_O] = RCG_KEY_O;
+   rcg_key_map[SDL_SCANCODE_P] = RCG_KEY_P;
+   rcg_key_map[SDL_SCANCODE_Q] = RCG_KEY_Q;
+   rcg_key_map[SDL_SCANCODE_R] = RCG_KEY_R;
+   rcg_key_map[SDL_SCANCODE_S] = RCG_KEY_S;
+   rcg_key_map[SDL_SCANCODE_T] = RCG_KEY_T;
+   rcg_key_map[SDL_SCANCODE_U] = RCG_KEY_U;
+   rcg_key_map[SDL_SCANCODE_V] = RCG_KEY_V;
+   rcg_key_map[SDL_SCANCODE_W] = RCG_KEY_W;
+   rcg_key_map[SDL_SCANCODE_X] = RCG_KEY_X;
+   rcg_key_map[SDL_SCANCODE_Y] = RCG_KEY_Y;
+   rcg_key_map[SDL_SCANCODE_Z] = RCG_KEY_Z;
+
+   rcg_key_map[SDL_SCANCODE_F1] = RCG_KEY_F1;
+   rcg_key_map[SDL_SCANCODE_F2] = RCG_KEY_F2;
+   rcg_key_map[SDL_SCANCODE_F3] = RCG_KEY_F3;
+   rcg_key_map[SDL_SCANCODE_F4] = RCG_KEY_F4;
+   rcg_key_map[SDL_SCANCODE_F5] = RCG_KEY_F5;
+   rcg_key_map[SDL_SCANCODE_F6] = RCG_KEY_F6;
+   rcg_key_map[SDL_SCANCODE_F7] = RCG_KEY_F7;
+   rcg_key_map[SDL_SCANCODE_F8] = RCG_KEY_F8;
+   rcg_key_map[SDL_SCANCODE_F9] = RCG_KEY_F9;
+   rcg_key_map[SDL_SCANCODE_F10] = RCG_KEY_F10;
+   rcg_key_map[SDL_SCANCODE_F11] = RCG_KEY_F11;
+   rcg_key_map[SDL_SCANCODE_F12] = RCG_KEY_F12;
+
+   rcg_key_map[SDL_SCANCODE_DOWN] = RCG_KEY_DOWN;
+   rcg_key_map[SDL_SCANCODE_LEFT] = RCG_KEY_LEFT;
+   rcg_key_map[SDL_SCANCODE_RIGHT] = RCG_KEY_RIGHT;
+   rcg_key_map[SDL_SCANCODE_UP] = RCG_KEY_UP;
+   rcg_key_map[SDL_SCANCODE_RETURN] = RCG_KEY_ENTER;
+
+   rcg_key_map[SDL_SCANCODE_BACKSPACE] = RCG_KEY_BACK;
+   rcg_key_map[SDL_SCANCODE_ESCAPE] = RCG_KEY_ESCAPE;
+   rcg_key_map[SDL_SCANCODE_TAB] = RCG_KEY_TAB;
+   rcg_key_map[SDL_SCANCODE_DELETE] = RCG_KEY_DEL;
+   rcg_key_map[SDL_SCANCODE_HOME] = RCG_KEY_HOME;
+   rcg_key_map[SDL_SCANCODE_END] = RCG_KEY_END;
+   rcg_key_map[SDL_SCANCODE_PAGEUP] = RCG_KEY_PGUP;
+   rcg_key_map[SDL_SCANCODE_PAGEDOWN] = RCG_KEY_PGDN;
+   rcg_key_map[SDL_SCANCODE_INSERT] = RCG_KEY_INS;
+   rcg_key_map[SDL_SCANCODE_LSHIFT] = RCG_KEY_LSHIFT;
+   rcg_key_map[SDL_SCANCODE_RSHIFT] = RCG_KEY_RSHIFT;
+   rcg_key_map[SDL_SCANCODE_LCTRL] = RCG_KEY_LCTRL;
+   rcg_key_map[SDL_SCANCODE_RCTRL] = RCG_KEY_RCTRL;
+   rcg_key_map[SDL_SCANCODE_RALT] = RCG_KEY_RALT;
+   rcg_key_map[SDL_SCANCODE_LALT] = RCG_KEY_LALT;
+   rcg_key_map[SDL_SCANCODE_SPACE] = RCG_KEY_SPACE;
+
+   rcg_key_map[SDL_SCANCODE_0] = RCG_KEY_0;
+   rcg_key_map[SDL_SCANCODE_1] = RCG_KEY_1;
+   rcg_key_map[SDL_SCANCODE_2] = RCG_KEY_2;
+   rcg_key_map[SDL_SCANCODE_3] = RCG_KEY_3;
+   rcg_key_map[SDL_SCANCODE_4] = RCG_KEY_4;
+   rcg_key_map[SDL_SCANCODE_5] = RCG_KEY_5;
+   rcg_key_map[SDL_SCANCODE_6] = RCG_KEY_6;
+   rcg_key_map[SDL_SCANCODE_7] = RCG_KEY_7;
+   rcg_key_map[SDL_SCANCODE_8] = RCG_KEY_8;
+   rcg_key_map[SDL_SCANCODE_9] = RCG_KEY_9;
+   
+   rcg_key_map[SDL_SCANCODE_COMMA] = RCG_KEY_COMMA;
+   rcg_key_map[SDL_SCANCODE_PERIOD] = RCG_KEY_PERIOD;
+
+   rcg_key_map[SDL_SCANCODE_KP_0] = RCG_KEY_NP0;
+   rcg_key_map[SDL_SCANCODE_KP_1] = RCG_KEY_NP1;
+   rcg_key_map[SDL_SCANCODE_KP_2] = RCG_KEY_NP2;
+   rcg_key_map[SDL_SCANCODE_KP_3] = RCG_KEY_NP3;
+   rcg_key_map[SDL_SCANCODE_KP_4] = RCG_KEY_NP4;
+   rcg_key_map[SDL_SCANCODE_KP_5] = RCG_KEY_NP5;
+   rcg_key_map[SDL_SCANCODE_KP_6] = RCG_KEY_NP6;
+   rcg_key_map[SDL_SCANCODE_KP_7] = RCG_KEY_NP7;
+   rcg_key_map[SDL_SCANCODE_KP_8] = RCG_KEY_NP8;
+   rcg_key_map[SDL_SCANCODE_KP_9] = RCG_KEY_NP9;
+   rcg_key_map[SDL_SCANCODE_KP_MULTIPLY] = RCG_KEY_NP_MUL;
+   rcg_key_map[SDL_SCANCODE_KP_PLUS] = RCG_KEY_NP_ADD;
+   rcg_key_map[SDL_SCANCODE_KP_DIVIDE] = RCG_KEY_NP_DIV;
+   rcg_key_map[SDL_SCANCODE_KP_MINUS] = RCG_KEY_NP_SUB;
+   rcg_key_map[SDL_SCANCODE_KP_PERIOD] = RCG_KEY_NP_DECIMAL;
+   rcg_key_map[SDL_SCANCODE_KP_ENTER] = RCG_KEY_NP_ENTER;
+
+   rcg_mouse_map[SDL_BUTTON_LEFT] = RCG_BUTTON_LEFT;
+   rcg_mouse_map[SDL_BUTTON_RIGHT] = RCG_BUTTON_RIGHT;
+   rcg_mouse_map[SDL_BUTTON_MIDDLE] = RCG_BUTTON_MIDDLE;
+   rcg_mouse_map[SDL_BUTTON_X1] = RCG_BUTTON_X1;
+   rcg_mouse_map[SDL_BUTTON_X2] = RCG_BUTTON_X2;
+///>
+/// And we are done with RCG_init()
+///<C
+}
+///>
+
+/// Next up, RCG_update, it contains the sdl2 event loop and handles input and fps limiting
+///<C
+void RCG_update()
+{
+///>
+
+/// First of, fps limiting, pretty simple, just some basic math
+///<C
+   rcg_frametime = SDL_GetPerformanceCounter()-rcg_framestart;
+   if(rcg_framedelay>rcg_frametime)
+      SDL_Delay(((rcg_framedelay-rcg_frametime)*1000)/SDL_GetPerformanceFrequency());
+   rcg_framestart = SDL_GetPerformanceCounter();
+///>
+
+   rcg_mouse_wheel = 0;
+   memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
+
+   //Event loop
+   SDL_Event event;
+   while(SDL_PollEvent(&event))
+   {
+      switch(event.type)
+      {
+      case SDL_QUIT:
+         RCG_quit();
+         break;
+      case SDL_KEYDOWN:
+         if(event.key.state==SDL_PRESSED)
+            rcg_new_key_state[rcg_key_map[event.key.keysym.scancode]] = 1;
+         break;
+      case SDL_KEYUP:
+         if(event.key.state==SDL_RELEASED)
+            rcg_new_key_state[rcg_key_map[event.key.keysym.scancode]] = 0;
+         break;
+      case SDL_MOUSEBUTTONDOWN:
+         if(event.button.state==SDL_PRESSED)
+            rcg_new_key_state[rcg_mouse_map[event.button.button]] = 1;
+         break;
+      case SDL_MOUSEBUTTONUP:
+         if(event.button.state==SDL_RELEASED)
+            rcg_new_key_state[rcg_mouse_map[event.button.button]] = 0;
+         break;       
+      case SDL_MOUSEWHEEL:
+         rcg_mouse_wheel = event.wheel.y;
+         break;
+      case SDL_WINDOWEVENT:
+         rcg_update_viewport();
+         break;
+      }
+   }
+   //-------------------------------------------
+   
+   int x,y;
+   SDL_GetMouseState(&x,&y);
+
+   x-=rcg_view_x;
+   y-=rcg_view_y;
+   rcg_mouse_x = x/rcg_pixel_scale;
+   rcg_mouse_y = y/rcg_pixel_scale;
+
+   SDL_GetRelativeMouseState(&rcg_mouse_x_rel,&rcg_mouse_y_rel);
+   rcg_mouse_x_rel = rcg_mouse_x_rel/rcg_pixel_scale;
+   rcg_mouse_y_rel = rcg_mouse_y_rel/rcg_pixel_scale;
+
+   if(rcg_mouse_x>=RCG_XRES)
+     rcg_mouse_x = RCG_XRES-1;
+   if(rcg_mouse_y>=RCG_YRES)
+     rcg_mouse_y = RCG_YRES-1;
+
+   if(rcg_mouse_x<0)
+     rcg_mouse_x = 0;
+   if(rcg_mouse_y<0)
+     rcg_mouse_y = 0;
+}
+
+void RCG_render_present()
+{
+   SDL_RenderClear(rcg_sdl_renderer);
+
+   SDL_Rect dst_rect;
+   dst_rect.x = rcg_view_x;
+   dst_rect.y = rcg_view_y;
+   dst_rect.w = rcg_view_width;
+   dst_rect.h = rcg_view_height;
+
+   void *data;
+   int stride;
+
+   SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
+
+   RCG_color * restrict pix = data;
+   for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
+      pix[i] = (RCG_color){.r = 32};
+
+   SDL_UnlockTexture(rcg_sdl_texture);
+
+   SDL_RenderCopy(rcg_sdl_renderer,rcg_sdl_texture,NULL,&dst_rect);
+
+   SDL_RenderPresent(rcg_sdl_renderer);
+}
+
+/// RCG_running() and RCG_quit()
+///<C
+int RCG_running()
+{
+   return rcg_running;
+}
+
+void RCG_quit()
+{
+   rcg_running = 0;
+}
+///>
+
+void RCG_mouse_relative(int relative)
+{
+   SDL_SetRelativeMouseMode(relative);
+}
+
+void RCG_mouse_show(int show)
+{
+   SDL_ShowCursor(show?SDL_ENABLE:SDL_DISABLE);
+}
+
+/// RCG_key_down(), RCG_key_pressed and RCG_key_released
+///<C
+int RCG_key_down(RCG_key key)
+{
+   return rcg_new_key_state[key];
+}
+
+int RCG_key_pressed(RCG_key key)
+{
+   return rcg_new_key_state[key]&&!rcg_old_key_state[key];
+}
+
+int RCG_key_released(RCG_key key)
+{
+   return !rcg_new_key_state[key]&&rcg_old_key_state[key];
+}
+///>
+
+/// RCG_mouse_wheel_scroll(), returns how much the mouse was scrolled this frame
+///<C
+int RCG_mouse_wheel_scroll()
+{
+   return rcg_mouse_wheel;
+}
+///>
+
+/// RCG_mouse_pos() and RCG_mouse_relative_pos(), return the actual mouse pos and how much it moved this frame respectively
+///<C
+void RCG_mouse_pos(int *x, int *y)
+{
+   *x = rcg_mouse_x;
+   *y = rcg_mouse_y;
+}
+
+void RCG_mouse_relative_pos(int *x, int *y)
+{
+   *x = rcg_mouse_x_rel;
+   *y = rcg_mouse_y_rel;
+}
+///>
+
+/// RCG_framebuffer(), very simple, just returns the framebuffer
+///<C
+uint8_t *RCG_framebuffer()
+{
+   return rcg_framebuffer;
+}
+///>
+
+/// Remember rcg_update_viewport()? Here is it's implementation:
+///
+/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise.
+///<C
+static void rcg_update_viewport()
+{
+   SDL_GetWindowSize(rcg_sdl_window,&rcg_window_width,&rcg_window_height);
+
+   float ratio = (float)rcg_window_width/(float)rcg_window_height;
+
+   if(ratio>(float)RCG_XRES/(float)RCG_YRES)
+   {
+      rcg_view_height = rcg_window_height;
+      rcg_view_width = ((float)RCG_XRES/(float)RCG_YRES)*(float)rcg_window_height;
+   }
+   else
+   {
+      rcg_view_width = rcg_window_width;
+      rcg_view_height = ((float)RCG_YRES/(float)RCG_XRES)*(float)rcg_window_width;
+   }
+
+   rcg_view_x = (rcg_window_width-rcg_view_width)/2;
+   rcg_view_y = (rcg_window_height-rcg_view_height)/2;
+
+   rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
+}
+///>
+
+/// Example code
+/// ---------------------------
+///
+/// Here is this articles example code
+///<C
+int main(int argc, char **argv)
+{
+   RCG_init("256 color graphics");
+
+   while(RCG_running())
+   {
+      RCG_update();
+
+      RCG_render_present();
+   }
+
+   return 0;
+}
+///>
+///
+/// ---------------------------
+/// Article Series:
+///   * [256 color graphics - Part 1 - Introduction](intro.html)
+///   * 256 color graphics - Part 2 - Initial setup: graphics output and input
+///   * [256 color graphics - Part 3 - Color palettes](part2.html)
+///   * [256 color graphics - Part 4 - Simple shapes drawing](part2.html)
+///   * [256 color graphics - Part 5 - Image loading and drawing](part2.html)
+///   * [256 color graphics - Part 6 - Basic math routines](part2.html)
+///   * [256 color graphics - Part 7 - Colormaps: lighting and transparency](part3.html)
+///
