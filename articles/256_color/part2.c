@@ -65,6 +65,7 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
+//Additionally, we'll need a way to represent color, the rendering itself will be palettized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r,g,b,a;
@@ -79,7 +80,7 @@ typedef struct
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
-//
+//Runs the sdl2 event loop, updates mouse and key states
 void RCG_update();
 
 //Returns, whether the app should keep running
@@ -91,21 +92,28 @@ void RCG_quit();
 //Uploads the framebuffer to the screen
 void RCG_render_present();
 
-//Input
+//Hides the cursor and only reports relative mouse positions
 void RCG_mouse_relative(int relative);
 
+//Hides the cursor
 void RCG_mouse_show(int show);
 
+//Returns whether a key is held down
 int RCG_key_down(RCG_key key);
 
+//Returns whether a key has been pressed this frame
 int RCG_key_pressed(RCG_key key);
 
+//Returns whether a key has been released this frame
 int RCG_key_released(RCG_key key);
 
+//Returns how much the mouse was scrolled this frame
 int RCG_mouse_wheel_scroll();
 
+//Writes the mouses pos into x and y
 void RCG_mouse_pos(int *x, int *y);
 
+//Writes how much the mouse was moved into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 
 //Returns a pointer to the framebuffer
@@ -127,34 +135,36 @@ static void rcg_update_viewport();
 /// Now, a few variables
 ///
 ///<C
-static SDL_Window *rcg_sdl_window;
-static SDL_Renderer *rcg_sdl_renderer;
+//SDL2
 static SDL_Texture *rcg_sdl_texture;
+static SDL_Renderer *rcg_sdl_renderer;
+static SDL_Window *rcg_sdl_window;
+
+//Input
 static uint8_t rcg_key_map[SDL_NUM_SCANCODES];
 static uint8_t rcg_mouse_map[6];
 static uint8_t rcg_new_key_state[RCG_KEY_MAX];
 static uint8_t rcg_old_key_state[RCG_KEY_MAX];
-
-static int rcg_running = 1;
-static int rcg_window_width;
-static int rcg_window_height;
-static int rcg_view_x;
-static int rcg_view_y;
-static int rcg_view_width;
-static int rcg_view_height;
-static float rcg_pixel_scale;
-
 static int rcg_mouse_x_rel;
 static int rcg_mouse_y_rel;
 static int rcg_mouse_x;
 static int rcg_mouse_y;
 static int rcg_mouse_wheel;
 
+//framebuffer drawing position
+static int rcg_view_x;
+static int rcg_view_y;
+static int rcg_view_width;
+static int rcg_view_height;
+static float rcg_pixel_scale;
+
+//fps limiting
 static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
 
 static uint8_t *rcg_framebuffer = NULL;
+static int rcg_running = 1;
 ///>
 ///
 /// Implementation
@@ -190,14 +200,14 @@ void RCG_init(const char *title)
    rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer,SDL_PIXELFORMAT_RGBA32,SDL_TEXTUREACCESS_STREAMING,RCG_XRES,RCG_YRES);
    SDL_SetTextureBlendMode(rcg_sdl_texture,SDL_BLENDMODE_NONE);
 
-   //Implementation will be discussed later in this article.
+   //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
 
-   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
-
+///>
+/// Additionally, we'll allocate the framebuffer and zero it out
+///<C
    rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
    memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
-
 ///>
 /// Now we are going to initialize the key mapping arrays, just copy paste this code
 ///<C
@@ -321,10 +331,14 @@ void RCG_update()
    rcg_framestart = SDL_GetPerformanceCounter();
 ///>
 
+/// Here we copy the new key state to the old one, 
+///<C
    rcg_mouse_wheel = 0;
    memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
+///>
 
-   //Event loop
+/// Here is the sdl2 event loop, 
+///<C
    SDL_Event event;
    while(SDL_PollEvent(&event))
    {
@@ -357,8 +371,11 @@ void RCG_update()
          break;
       }
    }
+///>
    //-------------------------------------------
    
+/// Mouse input! This piece of code 
+///<C
    int x,y;
    SDL_GetMouseState(&x,&y);
 
@@ -380,35 +397,44 @@ void RCG_update()
      rcg_mouse_x = 0;
    if(rcg_mouse_y<0)
      rcg_mouse_y = 0;
+///>
+/// That's it for RCG_update
+///<C
 }
+///>
 
+/// Now, RCG_render_present(), it's supposed to upload the framebuffer to the window. Since we haven't implemented color palettes yet (next article), it fills the window with a dark red color instead.
+///<C
 void RCG_render_present()
 {
+   //Clear the screen (we would have garbage outside of the framebuffer if we wouldn't)
    SDL_RenderClear(rcg_sdl_renderer);
 
+   //SDL textures need to be locked to copy data to them
+   void *data;
+   int stride;
+   SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
+
+   //Next article, we'll change this loop to instead copy the framebuffer to pix
+   RCG_color * restrict pix = data;
+   for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
+      pix[i] = (RCG_color){.r = 32};
+   SDL_UnlockTexture(rcg_sdl_texture);
+
+   //Here we actually render the texture to the screen, using the rcg_view_* values calculated by rcg_update_viewport() for positioning the texture
    SDL_Rect dst_rect;
    dst_rect.x = rcg_view_x;
    dst_rect.y = rcg_view_y;
    dst_rect.w = rcg_view_width;
    dst_rect.h = rcg_view_height;
-
-   void *data;
-   int stride;
-
-   SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
-
-   RCG_color * restrict pix = data;
-   for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
-      pix[i] = (RCG_color){.r = 32};
-
-   SDL_UnlockTexture(rcg_sdl_texture);
-
    SDL_RenderCopy(rcg_sdl_renderer,rcg_sdl_texture,NULL,&dst_rect);
 
+   //Actuall show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
 }
+///>
 
-/// RCG_running() and RCG_quit()
+/// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the programm should keep runnning
 ///<C
 int RCG_running()
 {
@@ -421,17 +447,23 @@ void RCG_quit()
 }
 ///>
 
+/// RCG_mouse_relative(), very important for fps games. It captures and hides the mouse cursor, only reporting relative mouse movements.
+///<C
 void RCG_mouse_relative(int relative)
 {
    SDL_SetRelativeMouseMode(relative);
 }
+///>
 
+/// RCG_mouse_show(), shows/hides the cursor
+///<C
 void RCG_mouse_show(int show)
 {
    SDL_ShowCursor(show?SDL_ENABLE:SDL_DISABLE);
 }
+///>
 
-/// RCG_key_down(), RCG_key_pressed and RCG_key_released
+/// RCG_key_down(), RCG_key_pressed() and RCG_key_released(), return a keys state by reading it's current and previous value in the respective array
 ///<C
 int RCG_key_down(RCG_key key)
 {
@@ -482,27 +514,30 @@ uint8_t *RCG_framebuffer()
 
 /// Remember rcg_update_viewport()? Here is it's implementation:
 ///
-/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise.
+/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise. All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
 ///<C
 static void rcg_update_viewport()
 {
-   SDL_GetWindowSize(rcg_sdl_window,&rcg_window_width,&rcg_window_height);
+   int window_width = 1;
+   int window_height = 1;
 
-   float ratio = (float)rcg_window_width/(float)rcg_window_height;
+   SDL_GetWindowSize(rcg_sdl_window,&window_width,&window_height);
+
+   float ratio = (float)window_width/(float)window_height;
 
    if(ratio>(float)RCG_XRES/(float)RCG_YRES)
    {
-      rcg_view_height = rcg_window_height;
-      rcg_view_width = ((float)RCG_XRES/(float)RCG_YRES)*(float)rcg_window_height;
+      rcg_view_height = window_height;
+      rcg_view_width = ((float)RCG_XRES/(float)RCG_YRES)*(float)window_height;
    }
    else
    {
-      rcg_view_width = rcg_window_width;
-      rcg_view_height = ((float)RCG_YRES/(float)RCG_XRES)*(float)rcg_window_width;
+      rcg_view_width = window_width;
+      rcg_view_height = ((float)RCG_YRES/(float)RCG_XRES)*(float)window_width;
    }
 
-   rcg_view_x = (rcg_window_width-rcg_view_width)/2;
-   rcg_view_y = (rcg_window_height-rcg_view_height)/2;
+   rcg_view_x = (window_width-rcg_view_width)/2;
+   rcg_view_y = (window_height-rcg_view_height)/2;
 
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
@@ -511,7 +546,7 @@ static void rcg_update_viewport()
 /// Example code
 /// ---------------------------
 ///
-/// Here is this articles example code
+/// This articles example code creates a window and runs the main loop until you close the window or press escape. If you've done everything right, the window should have a dark red background, look at the image below for reference.
 ///<C
 int main(int argc, char **argv)
 {
@@ -521,18 +556,28 @@ int main(int argc, char **argv)
    {
       RCG_update();
 
+      if(RCG_key_pressed(RCG_KEY_ESCAPE))
+         RCG_quit();
+
       RCG_render_present();
    }
 
    return 0;
 }
+
 ///>
+/// ![This is what you should be seeing, quite boring, isn't it?](image/part2_img0.png)
+///
+/// Download
+/// ---------------------------
+///
+/// Download this articles source code here: [part2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/part2.c)
 ///
 /// ---------------------------
 /// Article Series:
 ///   * [256 color graphics - Part 1 - Introduction](intro.html)
 ///   * 256 color graphics - Part 2 - Initial setup: graphics output and input
-///   * [256 color graphics - Part 3 - Color palettes](part2.html)
+///   * [256 color graphics - Part 3 - Color palettes](part3.html)
 ///   * [256 color graphics - Part 4 - Simple shapes drawing](part2.html)
 ///   * [256 color graphics - Part 5 - Image loading and drawing](part2.html)
 ///   * [256 color graphics - Part 6 - Basic math routines](part2.html)
