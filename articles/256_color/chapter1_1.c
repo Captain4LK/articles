@@ -1,10 +1,18 @@
+#ifndef _RCG_H_
+
+#define _RCG_H_
+
+// This file can be compiled with the following command: ``gcc articles/256_color/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2``
+
 ///////////////////////
-/// # 256 color graphics - Part 2 - Initial setup: graphics output and input
+/// # 256 color graphics - Chapter 1.1 - Initial setup: graphics output and input
 ///
 /// Introduction
 /// ---------------------------
 ///
 /// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
+///
+/// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed, take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
 ///
 /// Headers
 /// ---------------------------
@@ -26,8 +34,10 @@
 /// Most of these could be implemented as variables instead, but I want to keep the code simple.
 ///
 ///<C
-#define RCG_XRES 320
-#define RCG_YRES 240
+//As God intended
+#define RCG_XRES 640
+#define RCG_YRES 480
+
 #define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
 ///>
 ///
@@ -80,17 +90,17 @@ typedef struct
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
-//Runs the sdl2 event loop, updates mouse and key states
-void RCG_update();
+//Runs the sdl2 event loop, updates key states
+void RCG_update(void);
 
 //Returns, whether the app should keep running
-int RCG_running();
+int RCG_running(void);
 
 //Makes RCG_running return false
-void RCG_quit();
+void RCG_quit(void);
 
 //Uploads the framebuffer to the screen
-void RCG_render_present();
+void RCG_render_present(void);
 
 //Hides the cursor and only reports relative mouse positions
 void RCG_mouse_relative(int relative);
@@ -108,7 +118,7 @@ int RCG_key_pressed(RCG_key key);
 int RCG_key_released(RCG_key key);
 
 //Returns how much the mouse was scrolled this frame
-int RCG_mouse_wheel_scroll();
+int RCG_mouse_wheel_scroll(void);
 
 //Writes the mouses pos into x and y
 void RCG_mouse_pos(int *x, int *y);
@@ -117,8 +127,14 @@ void RCG_mouse_pos(int *x, int *y);
 void RCG_mouse_relative_pos(int *x, int *y);
 
 //Returns a pointer to the framebuffer
-uint8_t *RCG_framebuffer();
+uint8_t *RCG_framebuffer(void);
 ///>
+
+#endif
+
+#ifdef RCG_IMPLEMENTATION
+#ifndef RCG_IMPLEMENTATION_ONCE
+
 /// Helper function prototypes
 /// ---------------------------
 ///
@@ -126,7 +142,7 @@ uint8_t *RCG_framebuffer();
 ///
 ///<C
 //Calculates the framebuffers position in the window
-static void rcg_update_viewport();
+static void rcg_update_viewport(void);
 ///>
 ///
 /// Variables
@@ -145,10 +161,6 @@ static uint8_t rcg_key_map[SDL_NUM_SCANCODES];
 static uint8_t rcg_mouse_map[6];
 static uint8_t rcg_new_key_state[RCG_KEY_MAX];
 static uint8_t rcg_old_key_state[RCG_KEY_MAX];
-static int rcg_mouse_x_rel;
-static int rcg_mouse_y_rel;
-static int rcg_mouse_x;
-static int rcg_mouse_y;
 static int rcg_mouse_wheel;
 
 //framebuffer drawing position
@@ -159,6 +171,7 @@ static int rcg_view_height;
 static float rcg_pixel_scale;
 
 //fps limiting
+//These could be static variables in RCG_update() instead, but we might want to read them for benchmarking later
 static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
@@ -319,7 +332,7 @@ void RCG_init(const char *title)
 
 /// Next up, RCG_update, it contains the sdl2 event loop and handles input and fps limiting
 ///<C
-void RCG_update()
+void RCG_update(void)
 {
 ///>
 
@@ -337,7 +350,7 @@ void RCG_update()
    memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
 ///>
 
-/// Here is the sdl2 event loop, 
+/// Here is the sdl2 event loop, we only process a few events, 
 ///<C
    SDL_Event event;
    while(SDL_PollEvent(&event))
@@ -372,40 +385,14 @@ void RCG_update()
       }
    }
 ///>
-   //-------------------------------------------
-   
-/// Mouse input! This piece of code 
-///<C
-   int x,y;
-   SDL_GetMouseState(&x,&y);
-
-   x-=rcg_view_x;
-   y-=rcg_view_y;
-   rcg_mouse_x = x/rcg_pixel_scale;
-   rcg_mouse_y = y/rcg_pixel_scale;
-
-   SDL_GetRelativeMouseState(&rcg_mouse_x_rel,&rcg_mouse_y_rel);
-   rcg_mouse_x_rel = rcg_mouse_x_rel/rcg_pixel_scale;
-   rcg_mouse_y_rel = rcg_mouse_y_rel/rcg_pixel_scale;
-
-   if(rcg_mouse_x>=RCG_XRES)
-     rcg_mouse_x = RCG_XRES-1;
-   if(rcg_mouse_y>=RCG_YRES)
-     rcg_mouse_y = RCG_YRES-1;
-
-   if(rcg_mouse_x<0)
-     rcg_mouse_x = 0;
-   if(rcg_mouse_y<0)
-     rcg_mouse_y = 0;
-///>
-/// That's it for RCG_update
+/// That's it for RCG_update()
 ///<C
 }
 ///>
 
 /// Now, RCG_render_present(), it's supposed to upload the framebuffer to the window. Since we haven't implemented color palettes yet (next article), it fills the window with a dark red color instead.
 ///<C
-void RCG_render_present()
+void RCG_render_present(void)
 {
    //Clear the screen (we would have garbage outside of the framebuffer if we wouldn't)
    SDL_RenderClear(rcg_sdl_renderer);
@@ -436,12 +423,12 @@ void RCG_render_present()
 
 /// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the programm should keep runnning
 ///<C
-int RCG_running()
+int RCG_running(void)
 {
    return rcg_running;
 }
 
-void RCG_quit()
+void RCG_quit(void)
 {
    rcg_running = 0;
 }
@@ -483,7 +470,7 @@ int RCG_key_released(RCG_key key)
 
 /// RCG_mouse_wheel_scroll(), returns how much the mouse was scrolled this frame
 ///<C
-int RCG_mouse_wheel_scroll()
+int RCG_mouse_wheel_scroll(void)
 {
    return rcg_mouse_wheel;
 }
@@ -493,20 +480,33 @@ int RCG_mouse_wheel_scroll()
 ///<C
 void RCG_mouse_pos(int *x, int *y)
 {
-   *x = rcg_mouse_x;
-   *y = rcg_mouse_y;
+   SDL_GetMouseState(x,y);
+
+   *x-=rcg_view_x;
+   *y-=rcg_view_y;
+   *x = *x/rcg_pixel_scale;
+   *y = *y/rcg_pixel_scale;
+
+   if(*x>=RCG_XRES)
+     *x = RCG_XRES-1;
+   if(*y>=RCG_YRES)
+     *y = RCG_YRES-1;
+
+   if(*x<0)
+     *x = 0;
+   if(*y<0)
+     *y = 0;
 }
 
 void RCG_mouse_relative_pos(int *x, int *y)
 {
-   *x = rcg_mouse_x_rel;
-   *y = rcg_mouse_y_rel;
+   SDL_GetRelativeMouseState(x,y);
 }
 ///>
 
 /// RCG_framebuffer(), very simple, just returns the framebuffer
 ///<C
-uint8_t *RCG_framebuffer()
+uint8_t *RCG_framebuffer(void)
 {
    return rcg_framebuffer;
 }
@@ -516,7 +516,7 @@ uint8_t *RCG_framebuffer()
 ///
 /// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise. All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
 ///<C
-static void rcg_update_viewport()
+static void rcg_update_viewport(void)
 {
    int window_width = 1;
    int window_height = 1;
@@ -542,6 +542,11 @@ static void rcg_update_viewport()
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
 ///>
+
+#endif
+#endif
+
+#ifdef RCG_EXAMPLE
 
 /// Example code
 /// ---------------------------
@@ -583,3 +588,5 @@ int main(int argc, char **argv)
 ///   * [256 color graphics - Part 6 - Basic math routines](part2.html)
 ///   * [256 color graphics - Part 7 - Colormaps: lighting and transparency](part3.html)
 ///
+
+#endif
