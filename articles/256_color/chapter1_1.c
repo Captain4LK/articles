@@ -2,7 +2,7 @@
 
 #define _RCG_H_
 
-// This file can be compiled with the following command: ``gcc articles/256_color/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2``
+//This file can be compiled with the following command: ``gcc articles/256_color/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2``
 
 ///////////////////////
 /// # 256 color graphics - Chapter 1.1 - Initial setup: graphics output and input
@@ -10,9 +10,9 @@
 /// Introduction
 /// ---------------------------
 ///
-/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
-///
 /// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed, take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
+///
+/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
 ///
 /// Headers
 /// ---------------------------
@@ -196,7 +196,7 @@ void RCG_init(const char *title)
    SDL_Init(flags);
 
    //Calculate max possible window scale
-   //This code is not necessary needed, sine the window will be resizable
+   //This code is not necessarily needed, sine the window will be resizable
    //It's only here to make the window not be tiny on high-res displays
    int scale = 1;
    int max_x,max_y;
@@ -421,7 +421,7 @@ void RCG_render_present(void)
 }
 ///>
 
-/// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the programm should keep runnning
+/// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the program should keep running
 ///<C
 int RCG_running(void)
 {
@@ -576,13 +576,13 @@ int main(int argc, char **argv)
 /// Download
 /// ---------------------------
 ///
-/// Download this articles source code here: [part2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/part2.c)
+/// Download this articles source code here: [chapter1_1.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_1.c)
 ///
 /// ---------------------------
 /// Article Series:
 ///   * [256 color graphics - Part 1 - Introduction](intro.html)
-///   * 256 color graphics - Part 2 - Initial setup: graphics output and input
-///   * [256 color graphics - Part 3 - Color palettes](part3.html)
+///   * [256 color graphics - Chapter 1.1 - Initial setup: graphics output and input](chapter1_1.html)
+///   * [256 color graphics - Chapter 1.2 - Color palettes](chapter1_2.html)
 ///   * [256 color graphics - Part 4 - Simple shapes drawing](part2.html)
 ///   * [256 color graphics - Part 5 - Image loading and drawing](part2.html)
 ///   * [256 color graphics - Part 6 - Basic math routines](part2.html)
