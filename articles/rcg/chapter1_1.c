@@ -2,27 +2,51 @@
 
 #define _RCG_H_
 
-//This file can be compiled with the following command: ``gcc articles/256_color/chapter1_2.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2``
+//This file can be compiled with the following command: ``gcc articles/256_color/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
 
 ///////////////////////
-/// # 256 color graphics - Chapter 1.2 - Color palettes
+/// ---
+/// title: "Retro Computer Graphics - Chapter 1.1 - Initial setup: graphics output and input"
+/// ---
 ///
 /// Introduction
 /// ---------------------------
 ///
-/// In this article we'll implement palette loading and actually display something on the screen.
+/// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed, take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
 ///
+/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
+///
+/// Headers
+/// ---------------------------
+/// 
+/// First, we are going to need to include some headers:
+///<C
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <SDL2/SDL.h>
-
+///>
+///
+/// Constants
+/// ---------------------------
+///
+/// Additionally, we need to define some constants:
+///
+/// Most of these could be implemented as variables instead, but I want to keep the code simple.
+///
+///<C
+//As God intended
 #define RCG_XRES 640
 #define RCG_YRES 480
 
 #define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
-
+///>
+///
+/// Typedefs
+/// ---------------------------
+///<C
+//I don't like using sdl scancodes directly, so we are going to remap keys to our own enums
 typedef enum 
 {
    RCG_KEY_NONE,
@@ -58,7 +82,13 @@ typedef struct
 {
    uint8_t r,g,b,a;
 }RCG_color;
-
+///>
+/// Function prototypes
+/// ---------------------------
+///
+/// These functions will be exposed to the user
+///
+///<C
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
@@ -100,13 +130,6 @@ void RCG_mouse_relative_pos(int *x, int *y);
 
 //Returns a pointer to the framebuffer
 uint8_t *RCG_framebuffer(void);
-
-/// Function prototypes
-/// ---------------------------
-///<C
-void RCG_palette_load(const char *path);
-
-RCG_color *RCG_palette(void);
 ///>
 
 #endif
@@ -117,13 +140,20 @@ RCG_color *RCG_palette(void);
 /// Helper function prototypes
 /// ---------------------------
 ///
+/// These are internal helper functions (identifiable by the lowercase prefix)
+///
 ///<C
-
-//Converts a hexidecimal character to an integer
-static int rcg_chartoi(char c);
-///>
+//Calculates the framebuffers position in the window
 static void rcg_update_viewport(void);
-
+///>
+///
+/// Variables
+/// ---------------------------
+///
+/// Now, a few variables
+///
+///<C
+//SDL2
 static SDL_Texture *rcg_sdl_texture;
 static SDL_Renderer *rcg_sdl_renderer;
 static SDL_Window *rcg_sdl_window;
@@ -150,16 +180,20 @@ static uint64_t rcg_framestart;
 
 static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
-
-/// Variables
-/// ---------------------------
-///<C
-
-static RCG_color rcg_palette[256];
 ///>
-
+///
+/// Implementation
+/// ---------------------------
+///
+/// Finally, some code! (I can barely believe it myself)
+///
+/// We start of with RCG_init(), it creates a window, allocates the framebuffer and initializes some LUTs. 
+///<C
 void RCG_init(const char *title)
 {
+///>
+/// First, some SDL2 boilerplate code, error checking and handling is left as an exercise for the reader
+///<C
    Uint32 flags = SDL_INIT_VIDEO|SDL_INIT_EVENTS;
    SDL_Init(flags);
 
@@ -184,9 +218,17 @@ void RCG_init(const char *title)
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
 
+   //TODO: explain
+   rcg_framedelay = SDL_GetPerformanceFrequency()/fps;
+
+///>
+/// Additionally, we'll allocate the framebuffer and zero it out
+///<C
    rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
    memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
-
+///>
+/// Now we are going to initialize the key mapping arrays, just copy paste this code
+///<C
    rcg_key_map[0x00] = RCG_KEY_NONE;
    rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
    rcg_key_map[SDL_SCANCODE_B] = RCG_KEY_B;
@@ -287,18 +329,34 @@ void RCG_init(const char *title)
    rcg_mouse_map[SDL_BUTTON_MIDDLE] = RCG_BUTTON_MIDDLE;
    rcg_mouse_map[SDL_BUTTON_X1] = RCG_BUTTON_X1;
    rcg_mouse_map[SDL_BUTTON_X2] = RCG_BUTTON_X2;
+///>
+/// And we are done with RCG_init()
+///<C
 }
+///>
 
+/// Next up, RCG_update, it contains the sdl2 event loop and handles input and fps limiting
+///<C
 void RCG_update(void)
 {
+///>
+
+/// First of, fps limiting, pretty simple, just some basic math
+///<C
    rcg_frametime = SDL_GetPerformanceCounter()-rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
       SDL_Delay(((rcg_framedelay-rcg_frametime)*1000)/SDL_GetPerformanceFrequency());
    rcg_framestart = SDL_GetPerformanceCounter();
+///>
 
+/// Here we copy the new key state to the old one, 
+///<C
    rcg_mouse_wheel = 0;
    memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
+///>
 
+/// Here is the sdl2 event loop, we only process a few events, 
+///<C
    SDL_Event event;
    while(SDL_PollEvent(&event))
    {
@@ -331,8 +389,14 @@ void RCG_update(void)
          break;
       }
    }
+///>
+/// That's it for RCG_update()
+///<C
 }
+///>
 
+/// Now, RCG_render_present(), it's supposed to upload the framebuffer to the window. Since we haven't implemented color palettes yet (next article), it fills the window with a dark red color instead.
+///<C
 void RCG_render_present(void)
 {
    //Clear the screen (we would have garbage outside of the framebuffer if we wouldn't)
@@ -360,7 +424,10 @@ void RCG_render_present(void)
    //Actuall show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
 }
+///>
 
+/// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the program should keep running
+///<C
 int RCG_running(void)
 {
    return rcg_running;
@@ -370,17 +437,26 @@ void RCG_quit(void)
 {
    rcg_running = 0;
 }
+///>
 
+/// RCG_mouse_relative(), very important for fps games. It captures and hides the mouse cursor, only reporting relative mouse movements.
+///<C
 void RCG_mouse_relative(int relative)
 {
    SDL_SetRelativeMouseMode(relative);
 }
+///>
 
+/// RCG_mouse_show(), shows/hides the cursor
+///<C
 void RCG_mouse_show(int show)
 {
    SDL_ShowCursor(show?SDL_ENABLE:SDL_DISABLE);
 }
+///>
 
+/// RCG_key_down(), RCG_key_pressed() and RCG_key_released(), return a keys state by reading it's current and previous value in the respective array
+///<C
 int RCG_key_down(RCG_key key)
 {
    return rcg_new_key_state[key];
@@ -395,12 +471,18 @@ int RCG_key_released(RCG_key key)
 {
    return !rcg_new_key_state[key]&&rcg_old_key_state[key];
 }
+///>
 
+/// RCG_mouse_wheel_scroll(), returns how much the mouse was scrolled this frame
+///<C
 int RCG_mouse_wheel_scroll(void)
 {
    return rcg_mouse_wheel;
 }
+///>
 
+/// RCG_mouse_pos() and RCG_mouse_relative_pos(), return the actual mouse pos and how much it moved this frame respectively
+///<C
 void RCG_mouse_pos(int *x, int *y)
 {
    SDL_GetMouseState(x,y);
@@ -425,40 +507,20 @@ void RCG_mouse_relative_pos(int *x, int *y)
 {
    SDL_GetRelativeMouseState(x,y);
 }
+///>
 
+/// RCG_framebuffer(), very simple, just returns the framebuffer
+///<C
 uint8_t *RCG_framebuffer(void)
 {
    return rcg_framebuffer;
 }
-
-/// Implementation
-/// ---------------------------
-///<C
-
-void RCG_palette_load(const char *path)
-{
-   FILE *f = fopen(path,"r");
-   if(NULL==f)
-      return;
-
-   char buffer[512];
-   int r,g,b;
-   int color 0;
-   while(fgets(buffer,512,f))
-   {
-      rcg_palette[
-      color++;
-   }
-
-   fclose(f);
-}
-
-RCG_color *RCG_palette(void)
-{
-   return rcg_palette;
-}
 ///>
 
+/// Remember rcg_update_viewport()? Here is it's implementation:
+///
+/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise. All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
+///<C
 static void rcg_update_viewport(void)
 {
    int window_width = 1;
@@ -484,6 +546,7 @@ static void rcg_update_viewport(void)
 
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
+///>
 
 #endif
 #endif
@@ -497,7 +560,7 @@ static void rcg_update_viewport(void)
 ///<C
 int main(int argc, char **argv)
 {
-   RCG_init("256 color graphics");
+   RCG_init("retro computer graphics - chapter 1.1");
 
    while(RCG_running())
    {
@@ -513,22 +576,22 @@ int main(int argc, char **argv)
 }
 
 ///>
-/// ![This is what you should be seeing, quite boring, isn't it?](image/part2_img0.png)
+/// ![This is what you should be seeing, quite boring, isn't it?](/image/rcg_chapter1_1_0.png)
 ///
 /// Download
 /// ---------------------------
 ///
-/// Download this articles source code here: [chapter1_2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_2.c)
+/// Download this articles source code here: [chapter1_1.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_1.c)
 ///
 /// ---------------------------
 /// Article Series:
-///   * [256 color graphics - Part 1 - Introduction](intro.html)
-///   * 256 color graphics - Part 2 - Initial setup: graphics output and input
-///   * [256 color graphics - Part 3 - Color palettes](part3.html)
-///   * [256 color graphics - Part 4 - Simple shapes drawing](part2.html)
-///   * [256 color graphics - Part 5 - Image loading and drawing](part2.html)
-///   * [256 color graphics - Part 6 - Basic math routines](part2.html)
-///   * [256 color graphics - Part 7 - Colormaps: lighting and transparency](part3.html)
+///   * [retro computer graphics - Introduction](/rcg/)
+///   * retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input
+///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///   * [retro computer graphics - Part 4 - Simple shapes drawing](part2.html)
+///   * [retro computer graphics - Part 5 - Image loading and drawing](part2.html)
+///   * [retro computer graphics - Part 6 - Basic math routines](part2.html)
+///   * [retro computer graphics - Part 7 - Colormaps: lighting and transparency](part3.html)
 ///
 
 #endif

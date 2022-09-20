@@ -1,5 +1,7 @@
 /////////////////
-/// # 256 color graphics - Part 1 - Introduction
+/// ---
+/// title: "Retro Computer Graphics - Introduction"
+/// ---
 ///
 /// Introduction
 /// ---------------------------
@@ -16,7 +18,8 @@
 /// Code style
 /// ---------------------------
 ///
-/// I'm going to use 'RCG' as a prefix for functions/typedefs/etc. (standing for retro computer graphics). If the prefix is lowercase, the function/type is meant to be internal.
+/// * I'm going to use 'RCG' as a prefix for functions/typedefs/etc. (standing for retro computer graphics). If the prefix is lowercase, the function/type is meant to be internal.
+/// * I'm not 
 ///
 /// Compiling
 /// ---------------------------
@@ -33,12 +36,11 @@
 ///
 /// ---------------------------
 /// Article Series:
-///   * 256 color graphics - Introduction
-///
-///   * [256 color graphics - Chapter 1.1 - Initial setup: graphics output and input](chapter1_1.html)
-///   * [256 color graphics - Chapter 1.2 - Color palettes](chapter1_2.html)
-///   * [256 color graphics - Chapter 1.3 - Simple shapes drawing](part2.html)
-///   * [256 color graphics - Chapter 1.4 - Image loading and drawing](part2.html)
-///   * [256 color graphics - Chapter 1.5 - Basic math routines](part2.html)
-///   * [256 color graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
+///   * retro computer graphics - Introduction
+///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
+///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///   * [retro computer graphics - Chapter 1.3 - Simple shapes drawing](part2.html)
+///   * [retro computer graphics - Chapter 1.4 - Image loading and drawing](part2.html)
+///   * [retro computer graphics - Chapter 1.5 - Basic math routines](part2.html)
+///   * [retro computer graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
 ///

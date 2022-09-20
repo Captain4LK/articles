@@ -10,12 +10,13 @@ SRC_ALL = $(call rwildcard,.,*.c)
 SRC_STDDOC = external/stddoc.c
 SRC_ARTICLES = $(call rwildcard,./articles,*.c)
 
-articles: stddoc $(SRC_ARTICLES:%.c=%.html)
+articles: stddoc $(SRC_ARTICLES:%.c=%.md)
 
 stddoc: $(SRC_STDDOC:%.c=%.o)
 	$(LD) -o $@ $^ $(LIBS)
 
-%.html: %.c
+%.md: %.c
 	./stddoc < $^ > $@
+	cp $@ $(patsubst articles/%,../website/content/%,$@)
 
 -include $(SRC_ALL:%.c=%.d)

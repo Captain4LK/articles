@@ -93,14 +93,16 @@
 
 /// # Using stddoc as library
 /// - Just include following snippet in your code:
-///<C++
+///<C
 #include <stdio.h>  // stddoc.c (v1.0.1)
 #include <stdlib.h> // - rlyeh, public domain
 #include <string.h>
-static void stddoc( FILE *in, FILE *out ) {
-    fprintf(out, "%s\n", "<meta charset='utf-8' emacsmode='-*- markdown -*-'>");
-    fprintf(out, "%s\n", "<link rel='stylesheet' href=\"https://casual-effects.com/markdeep/latest/slate.css?\">");
-    fprintf(out, "%s\n", "<style>.backtick, .tilde {overflow-x: auto;} .longTOC {overflow-x: hidden;}</style>");
+
+static void stddoc(FILE *in,FILE *out)
+{
+    //fprintf(out, "%s\n", "<meta charset='utf-8' emacsmode='-*- markdown -*-'>");
+    //fprintf(out, "%s\n", "<link rel='stylesheet' href=\"/css/slate.css?\">");
+    //fprintf(out, "%s\n", "<style>.backtick, .tilde {overflow-x: auto;} .longTOC {overflow-x: hidden;}</style>");
     struct { int on, prev; } stack[256] = {0}, *quote = stack;
     for( char *buffer = (char *)malloc(16384); buffer; buffer = (free(buffer), 0))
     for( int line = 1; fgets( buffer, 16383, in ) && !feof(in) ; ++line ) {
@@ -110,26 +112,25 @@ static void stddoc( FILE *in, FILE *out ) {
         char next = tag ? *(tag+=3) : 0;
         int markdeep = next == ' ' || next == '\r' || next == '\n', forgot_quote_end = markdeep && ( quote > stack );
         if( next == '!' ) fprintf( stderr, "Warning: (Line %d) %s", line, tag );         // warning comment
-        if( next == '>' || forgot_quote_end ) if( quote > stack     ) { --quote, ++tag; if( quote  == stack ) fprintf( out, "%s\n", "~""~~\n</script>"); }
-        if( next == '<'                     ) if( quote < stack+255 ) { ++quote, ++tag; fprintf( out, "%s", quote-1 == stack ? "<script type='preformatted'>\n~""~~" : "(...)"); }
+        if( next == '>' || forgot_quote_end ) if( quote > stack     ) { --quote, ++tag; if( quote  == stack ) fprintf( out, "%s\n", "```"); }
+        if( next == '<'                     ) if( quote < stack+255 ) { ++quote, ++tag; fprintf( out, "%s", quote-1 == stack ? "```":"(...)"); }
         if( quote == stack+1 || markdeep ) {
             tag = tag ? tag : buffer;
             fprintf( out, "%s", tag + (tag[0] == ' ') );
         }
     }
-    while( quote > stack ) { --quote; fprintf( out, "%s\n", "~""~~\n</script>" ); }
-    fprintf(out, "%s\n", "<s""cript>m""arkdeepOptions={tocStyle:'long'};</script>");
-    fprintf(out, "%s\n", "<!-- M""arkdeep: --><s""cript src='https://morgan3d.github.io/m""arkdeep/latest/markdeep.min.js?'></script>");
+    while( quote > stack ) { --quote; fprintf( out, "%s\n", "```" ); }
+    //fprintf(out, "%s\n", "<s""cript>m""arkdeepOptions={tocStyle:'long'};</script>");
+    //fprintf(out, "%s\n", "<!-- M""arkdeep: --><s""cript src='https://morgan3d.github.io/m""arkdeep/latest/markdeep.min.js?'></script>");
 }
 ///>
 
 #ifndef STDDOC_HEADER_ONLY
-int main( int c, char **v ) {
-    if( c == 1 ) {
-        return stddoc( stdin, stdout ), 0;
-    } else {
-        return printf("Usage:\t%s < input.source > output.html\n", v[0]);
-    }
+int main(int argc, char **argv)
+{
+   if(argc==1)
+      return stddoc(stdin,stdout),0;
+   return printf("Usage:\t%s < input.source > output.html\n",argv[0]);
 }
 #endif
 
