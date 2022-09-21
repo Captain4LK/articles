@@ -21,6 +21,11 @@
 /// * I'm going to use 'RCG' as a prefix for functions/typedefs/etc. (standing for retro computer graphics). If the prefix is lowercase, the function/type is meant to be internal.
 /// * I'm not 
 ///
+/// Assets
+/// ---------------------------
+///
+/// TODO: note about asset sources (freedoom, oga)
+///
 /// Compiling
 /// ---------------------------
 ///

@@ -23,7 +23,7 @@
 #define RCG_XRES 640
 #define RCG_YRES 480
 
-#define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
+#define RCG_FPS 30
 
 typedef enum 
 {
@@ -157,8 +157,11 @@ static RCG_color rcg_palette[256];
 
 /// Implementation
 /// ---------------------------
-///<C
 
+/// First of, RCG_palette_load(). We'll use the very simple .hex format, it just stores one color per line in a hexadecimal format. On [lospec](https://lospec.com/palette-list) you can download any of the availible palettes in this format.
+///
+/// In a more sophisticated game/engine, you should probably replace this with a different format (.gpl/.pal/a custom one)
+///<C
 void RCG_palette_load(const char *path)
 {
    FILE *f = fopen(path,"r");
@@ -180,7 +183,10 @@ void RCG_palette_load(const char *path)
 
    fclose(f);
 }
+///>
 
+/// A 'getter' for the palette, RCG_palette(). Not const to make it possible for the user to modify the palette on the fly.
+///<C
 RCG_color *RCG_palette(void)
 {
    return rcg_palette;
@@ -374,7 +380,8 @@ void RCG_render_present(void)
    int stride;
    SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
 
-/// Additionally, we'll 
+/// Additionally, we'll change the loop from last time to instead copy the framebuffer to the texture,
+/// mapping the 8 bit indices to palette colors.
 /// ```C
 /// void RCG_render_present(void)
 /// {
@@ -505,12 +512,12 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code creates a window and runs the main loop until you close the window or press escape. If you've done everything right, the window should have a dark red background, look at the image below for reference.
+/// This articles example code loads a palette, the one used by freedoom to be exact, you can find it in the Download section. 
 ///<C
 int main(int argc, char **argv)
 {
    RCG_init("retro computer graphics - chapter 1.2");
-   RCG_palette_load("duel.hex");
+   RCG_palette_load("freedoom.hex");
 
    while(RCG_running())
    {
@@ -529,17 +536,18 @@ int main(int argc, char **argv)
 }
 
 ///>
-/// ![This is what you should be seeing, quite boring, isn't it?](image/part2_img0.png)
+/// ![This is what you should be seeing](image/part2_img0.png)
 ///
 /// Download
 /// ---------------------------
 ///
+/// [freedoom.hex)() [FREEDOOM]
 /// Download this articles source code here: [chapter1_2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_2.c)
 ///
 /// ---------------------------
 /// Article Series:
 ///   * [retro computer graphics - Introduction](/rcg/)
-///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](chapter1_1.html)
+///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///   * retro computer graphics - Chapter 1.2 - Color palettes
 ///   * [retro computer graphics - Part 4 - Simple shapes drawing](part2.html)
 ///   * [retro computer graphics - Part 5 - Image loading and drawing](part2.html)

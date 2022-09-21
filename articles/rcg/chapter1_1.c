@@ -33,7 +33,7 @@
 ///
 /// Additionally, we need to define some constants:
 ///
-/// Most of these could be implemented as variables instead, but I want to keep the code simple.
+/// All of these could be implemented as variables instead, but I want to keep the code simple.
 ///
 ///<C
 //As God intended
@@ -217,11 +217,13 @@ void RCG_init(const char *title)
 
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
-
-   //TODO: explain
-   rcg_framedelay = SDL_GetPerformanceFrequency()/fps;
-
 ///>
+
+/// We'll also calculate how long a single frame is supposed to take, so we can later sleep the appropriate amount in RCG_update()
+///<C
+   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
+///>
+
 /// Additionally, we'll allocate the framebuffer and zero it out
 ///<C
    rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
