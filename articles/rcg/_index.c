@@ -24,7 +24,7 @@
 /// Assets
 /// ---------------------------
 ///
-/// TODO: note about asset sources (freedoom, oga)
+/// The example code at the end of every article makes use of various assets from different sources. See [Appendix 0](/rcg/appendix0) for more information.
 ///
 /// Compiling
 /// ---------------------------
@@ -42,10 +42,13 @@
 /// ---------------------------
 /// Article Series:
 ///   * retro computer graphics - Introduction
-///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
-///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
-///   * [retro computer graphics - Chapter 1.3 - Simple shapes drawing](part2.html)
-///   * [retro computer graphics - Chapter 1.4 - Image loading and drawing](part2.html)
-///   * [retro computer graphics - Chapter 1.5 - Basic math routines](part2.html)
-///   * [retro computer graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
+///   * Chapter 1
+///     * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
+///     * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///     * [retro computer graphics - Chapter 1.3 - Simple shapes drawing](part2.html)
+///     * [retro computer graphics - Chapter 1.4 - Image loading and drawing](part2.html)
+///     * [retro computer graphics - Chapter 1.5 - Basic math routines](part2.html)
+///     * [retro computer graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
+///   * Appendix
+///     * [retro computer graphics - Appendix 0 - Assets](/rcg/appendix0)
 ///

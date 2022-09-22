@@ -2,7 +2,7 @@
 
 #define _RCG_H_
 
-//This file can be compiled with the following command: ``gcc articles/256_color/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
+//This file can be compiled with the following command: ``gcc articles/rcg/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
 
 ///////////////////////
 /// ---
@@ -583,7 +583,7 @@ int main(int argc, char **argv)
 /// Download
 /// ---------------------------
 ///
-/// Download this articles source code here: [chapter1_1.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_1.c)
+/// Download this articles source code here: [chapter1_1.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_1.c)
 ///
 /// ---------------------------
 /// Article Series:

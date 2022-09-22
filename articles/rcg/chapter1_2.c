@@ -2,7 +2,7 @@
 
 #define _RCG_H_
 
-//This file can be compiled with the following command: ``gcc articles/256_color/chapter1_2.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
+//This file can be compiled with the following command: ``gcc articles/rcg/chapter1_2.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
 
 ///////////////////////
 /// ---
@@ -13,6 +13,8 @@
 /// ---------------------------
 ///
 /// In this article we'll implement palette loading and actually display something on the screen.
+///
+/// Instead of using a 24bit color framebuffer directly, the framebuffer instead contains indices into an array of colors (the color palette). Since our framebuffer is an array of 8 bit integers, we have a maximum of 255 (0 is reserved for transparancy) color availible. This might seem too low to create 3d graphics, including basic lighting, at first, but in later articles we are going to discuss techniques helping to use these colors to their maximum.
 ///
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,7 +108,7 @@ uint8_t *RCG_framebuffer(void);
 /// Function prototypes
 /// ---------------------------
 ///<C
-//
+//Loads a palette from a .hex file
 void RCG_palette_load(const char *path);
 
 //Returns a pointer to the palette
@@ -168,6 +170,9 @@ void RCG_palette_load(const char *path)
    if(NULL==f)
       return;
 
+   //Read the input file line by line and parse the input using sscanf()
+   //Alternatively you could not use sscanf() and parse the string manually,
+   //which due to the simple format of the file would be very easy to implement in this case
    char buffer[512];
    int color = 0;
    while(fgets(buffer,512,f))
@@ -185,7 +190,7 @@ void RCG_palette_load(const char *path)
 }
 ///>
 
-/// A 'getter' for the palette, RCG_palette(). Not const to make it possible for the user to modify the palette on the fly.
+/// A 'getter' for the palette, RCG_palette(). Not ``const`` to make it possible for the user to modify the palette on the fly.
 ///<C
 RCG_color *RCG_palette(void)
 {
@@ -512,7 +517,9 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code loads a palette, the one used by freedoom to be exact, you can find it in the Download section. 
+/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times. 
+///
+/// At this point you theoretically already have everything for making a basic game, the following chapters will lay the baseline for creating 3d graphics.
 ///<C
 int main(int argc, char **argv)
 {
@@ -536,13 +543,14 @@ int main(int argc, char **argv)
 }
 
 ///>
-/// ![This is what you should be seeing](image/part2_img0.png)
+/// ![This is what you should be seeing](/image/rcg_chapter1_2_0.png)
 ///
 /// Download
 /// ---------------------------
 ///
-/// [freedoom.hex)() [FREEDOOM]
-/// Download this articles source code here: [chapter1_2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/256_color/chapter1_2.c)
+/// [freedoom.hex](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/assets/freedoom.hex) [FREEDOOM]
+///
+/// Download this articles source code here: [chapter1_2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_2.c)
 ///
 /// ---------------------------
 /// Article Series:
