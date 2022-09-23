@@ -2,51 +2,31 @@
 
 #define _RCG_H_
 
-//This file can be compiled with the following command: ``gcc articles/rcg/chapter1_1.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
+//This file can be compiled with the following command: ``gcc articles/rcg/chapter1_3.c -DRCG_EXAMPLE -DRCG_IMPLEMENTATION -lSDL2 -Og -g``
 
 ///////////////////////
 /// ---
-/// title: "Retro Computer Graphics - Chapter 1.1 - Initial setup: graphics output and input"
+/// title: "Retro Computer Graphics - Chapter 1.3 - Basic drawing"
 /// ---
 ///
 /// Introduction
 /// ---------------------------
 ///
-/// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed, take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
+/// In this article we'll implement a few simple drawing routines.
 ///
-/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
+/// Instead of using a 24bit color framebuffer directly, the framebuffer instead contains indices into an array of colors (the color palette). Since our framebuffer is an array of 8 bit integers, we have a maximum of 255 (0 is reserved for transparancy) color availible. This might seem too low to create 3d graphics, including basic lighting, at first, but in later articles we are going to discuss techniques helping to use these colors to their maximum.
 ///
-/// Headers
-/// ---------------------------
-/// 
-/// First, we are going to need to include some headers:
-///<C
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <SDL2/SDL.h>
-///>
-///
-/// Constants
-/// ---------------------------
-///
-/// Additionally, we need to define some constants:
-///
-/// All of these could be implemented as variables instead, but I want to keep the code simple.
-///
-///<C
-//As God intended
+
 #define RCG_XRES 640
 #define RCG_YRES 480
 
-#define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
-///>
-///
-/// Typedefs
-/// ---------------------------
-///<C
-//I don't like using sdl scancodes directly, so we are going to remap keys to our own enums
+#define RCG_FPS 30
+
 typedef enum 
 {
    RCG_KEY_NONE,
@@ -82,13 +62,7 @@ typedef struct
 {
    uint8_t r,g,b,a;
 }RCG_color;
-///>
-/// Function prototypes
-/// ---------------------------
-///
-/// These functions will be exposed to the user
-///
-///<C
+
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
@@ -130,6 +104,28 @@ void RCG_mouse_relative_pos(int *x, int *y);
 
 //Returns a pointer to the framebuffer
 uint8_t *RCG_framebuffer(void);
+
+//Loads a palette from a .hex file
+void RCG_palette_load(const char *path);
+
+//Returns a pointer to the palette
+RCG_color *RCG_palette(void);
+
+/// Function prototypes
+/// ---------------------------
+///<C
+//
+void RCG_draw_clear(uint8_t color);
+
+void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color);
+
+void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color);
+
+void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color);
+
+void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color);
+
+void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color);
 ///>
 
 #endif
@@ -137,23 +133,8 @@ uint8_t *RCG_framebuffer(void);
 #ifdef RCG_IMPLEMENTATION
 #ifndef RCG_IMPLEMENTATION_ONCE
 
-/// Helper function prototypes
-/// ---------------------------
-///
-/// These are internal helper functions (identifiable by the lowercase prefix)
-///
-///<C
-//Calculates the framebuffers position in the window
 static void rcg_update_viewport(void);
-///>
-///
-/// Variables
-/// ---------------------------
-///
-/// Now, a few variables
-///
-///<C
-//SDL2
+
 static SDL_Texture *rcg_sdl_texture;
 static SDL_Renderer *rcg_sdl_renderer;
 static SDL_Window *rcg_sdl_window;
@@ -180,20 +161,41 @@ static uint64_t rcg_framestart;
 
 static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
-///>
-///
-/// Implementation
-/// ---------------------------
-///
-/// Finally, some code! (I can barely believe it myself)
-///
-/// We start of with RCG_init(), it creates a window, allocates the framebuffer and initializes some LUTs. 
-///<C
+
+static RCG_color rcg_palette[256];
+
+void RCG_palette_load(const char *path)
+{
+   FILE *f = fopen(path,"r");
+   if(NULL==f)
+      return;
+
+   //Read the input file line by line and parse the input using sscanf()
+   //Alternatively you could not use sscanf() and parse the string manually,
+   //which due to the simple format of the file would be very easy to implement in this case
+   char buffer[512];
+   int color = 0;
+   while(fgets(buffer,512,f))
+   {
+      unsigned r,g,b;
+      sscanf(buffer,"%2x%2x%2x",&r,&g,&b);
+      rcg_palette[color].r = r;
+      rcg_palette[color].g = g;
+      rcg_palette[color].b = b;
+      rcg_palette[color].a = 255;
+      color++;
+   }
+
+   fclose(f);
+}
+
+RCG_color *RCG_palette(void)
+{
+   return rcg_palette;
+}
+
 void RCG_init(const char *title)
 {
-///>
-/// First, some SDL2 boilerplate code, error checking and handling is left as an exercise for the reader
-///<C
    Uint32 flags = SDL_INIT_VIDEO|SDL_INIT_EVENTS;
    SDL_Init(flags);
 
@@ -215,22 +217,14 @@ void RCG_init(const char *title)
    rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer,SDL_PIXELFORMAT_RGBA32,SDL_TEXTUREACCESS_STREAMING,RCG_XRES,RCG_YRES);
    SDL_SetTextureBlendMode(rcg_sdl_texture,SDL_BLENDMODE_NONE);
 
+   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
+
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
-///>
 
-/// We'll also calculate how long a single frame is supposed to take, so we can later sleep the appropriate amount in RCG_update()
-///<C
-   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
-///>
-
-/// Additionally, we'll allocate the framebuffer and zero it out
-///<C
    rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
    memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
-///>
-/// Now we are going to initialize the key mapping arrays, just copy paste this code
-///<C
+
    rcg_key_map[0x00] = RCG_KEY_NONE;
    rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
    rcg_key_map[SDL_SCANCODE_B] = RCG_KEY_B;
@@ -331,34 +325,18 @@ void RCG_init(const char *title)
    rcg_mouse_map[SDL_BUTTON_MIDDLE] = RCG_BUTTON_MIDDLE;
    rcg_mouse_map[SDL_BUTTON_X1] = RCG_BUTTON_X1;
    rcg_mouse_map[SDL_BUTTON_X2] = RCG_BUTTON_X2;
-///>
-/// And we are done with RCG_init()
-///<C
 }
-///>
 
-/// Next up, RCG_update, it contains the sdl2 event loop and handles input and fps limiting
-///<C
 void RCG_update(void)
 {
-///>
-
-/// First of, fps limiting, pretty simple, just some basic math
-///<C
    rcg_frametime = SDL_GetPerformanceCounter()-rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
       SDL_Delay(((rcg_framedelay-rcg_frametime)*1000)/SDL_GetPerformanceFrequency());
    rcg_framestart = SDL_GetPerformanceCounter();
-///>
 
-/// Here we copy the new key state to the old one, 
-///<C
    rcg_mouse_wheel = 0;
    memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
-///>
 
-/// Here is the sdl2 event loop, we only process a few events, 
-///<C
    SDL_Event event;
    while(SDL_PollEvent(&event))
    {
@@ -391,14 +369,8 @@ void RCG_update(void)
          break;
       }
    }
-///>
-/// That's it for RCG_update()
-///<C
 }
-///>
 
-/// Now, RCG_render_present(), it's supposed to upload the framebuffer to the window. Since we haven't implemented color palettes yet (next article), it fills the window with a dark red color instead.
-///<C
 void RCG_render_present(void)
 {
    //Clear the screen (we would have garbage outside of the framebuffer if we wouldn't)
@@ -409,10 +381,12 @@ void RCG_render_present(void)
    int stride;
    SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
 
-   //Next article, we'll change this loop to instead copy the framebuffer to pix
+   const RCG_color * restrict pal = RCG_palette();
+   const uint8_t * restrict src = RCG_framebuffer();
    RCG_color * restrict pix = data;
    for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
-      pix[i] = (RCG_color){.r = 32};
+      pix[i] = pal[src[i]];
+
    SDL_UnlockTexture(rcg_sdl_texture);
 
    //Here we actually render the texture to the screen, using the rcg_view_* values calculated by rcg_update_viewport() for positioning the texture
@@ -426,10 +400,7 @@ void RCG_render_present(void)
    //Actuall show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
 }
-///>
 
-/// RCG_running() and RCG_quit(), these two functions are basically just getters/setters for whether the program should keep running
-///<C
 int RCG_running(void)
 {
    return rcg_running;
@@ -439,26 +410,17 @@ void RCG_quit(void)
 {
    rcg_running = 0;
 }
-///>
 
-/// RCG_mouse_relative(), very important for fps games. It captures and hides the mouse cursor, only reporting relative mouse movements.
-///<C
 void RCG_mouse_relative(int relative)
 {
    SDL_SetRelativeMouseMode(relative);
 }
-///>
 
-/// RCG_mouse_show(), shows/hides the cursor
-///<C
 void RCG_mouse_show(int show)
 {
    SDL_ShowCursor(show?SDL_ENABLE:SDL_DISABLE);
 }
-///>
 
-/// RCG_key_down(), RCG_key_pressed() and RCG_key_released(), return a keys state by reading it's current and previous value in the respective array
-///<C
 int RCG_key_down(RCG_key key)
 {
    return rcg_new_key_state[key];
@@ -473,18 +435,12 @@ int RCG_key_released(RCG_key key)
 {
    return !rcg_new_key_state[key]&&rcg_old_key_state[key];
 }
-///>
 
-/// RCG_mouse_wheel_scroll(), returns how much the mouse was scrolled this frame
-///<C
 int RCG_mouse_wheel_scroll(void)
 {
    return rcg_mouse_wheel;
 }
-///>
 
-/// RCG_mouse_pos() and RCG_mouse_relative_pos(), return the actual mouse pos and how much it moved this frame respectively
-///<C
 void RCG_mouse_pos(int *x, int *y)
 {
    SDL_GetMouseState(x,y);
@@ -509,20 +465,109 @@ void RCG_mouse_relative_pos(int *x, int *y)
 {
    SDL_GetRelativeMouseState(x,y);
 }
-///>
 
-/// RCG_framebuffer(), very simple, just returns the framebuffer
-///<C
 uint8_t *RCG_framebuffer(void)
 {
    return rcg_framebuffer;
 }
+
+/// Implementation
+/// ---------------------------
+///<C
+void RCG_draw_clear(uint8_t color)
+{
+   memset(rcg_framebuffer,color,RCG_XRES*RCG_YRES);
+}
+
+void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
+{
+   if(y0>y1)
+   {
+      int t = y0;
+      y0 = y1;
+      y1 = t;
+   }
+
+   if(x<0||x>=RCG_XRES||y0>=RCG_YRES||y1<0)
+      return;
+
+   if(y0<0)
+      y0 = 0;
+   if(y1>=RCG_YRES)
+      y1 = RCG_YRES-1;
+
+   uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x];
+   for(int y = y0;y<=y1;y++)
+   {
+      *dst = color;
+      dst+=RCG_XRES;
+   }
+}
+
+void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
+{
+   if(x0>x1)
+   {
+      int t = x0;
+      x0 = x1;
+      x1 = t;
+   }
+	   
+   if(y<0||y>=RCG_YRES||x0>=RCG_XRES||x1<0)
+      return;
+
+   if(x0<0)
+      x0 = 0;
+   if(x1>=RCG_XRES)
+      x1 = RCG_XRES-1;
+
+   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x0];
+   for(int x = x0;x<=x1;x++)
+      *(dst++) = index;
+}
+
+void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
+{
+}
+
+void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
+{
+   RCG_draw_line_horizontal(x,y,x+width,color);
+   RCG_draw_line_horizontal(x,y+height,x+width,color);
+   RCG_draw_line_vertical(x,y+1,y+height-1,color);
+   RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
+}
+
+void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
+{
+   //Clip src rect
+   int draw_start_y = 0;
+   int draw_start_x = 0;
+   int draw_end_x = width;
+   int draw_end_y = height;
+
+   if(x<0)
+      draw_start_x = -x;
+   if(y<0)
+      draw_start_y = -y;
+   if(x+draw_end_x>RCG_XRES)
+      draw_end_x = width+(RCG_XRES-x-draw_end_x);
+   if(y+draw_end_y>RCG_YRES)
+      draw_end_y = height+(RCG_YRES-y-draw_end_y);
+    
+   //Clip dst rect
+   x = x<0?0:x;
+   y = y<0?0:y;
+
+   uint8_t * restrict dst = &RCG_core_framebuffer()[y*RCG_XRES+x];
+   int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
+    
+   for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
+      for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
+         *dst = index;
+}
 ///>
 
-/// Remember rcg_update_viewport()? Here is it's implementation:
-///
-/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise. All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
-///<C
 static void rcg_update_viewport(void)
 {
    int window_width = 1;
@@ -548,7 +593,6 @@ static void rcg_update_viewport(void)
 
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
-///>
 
 #endif
 #endif
@@ -558,15 +602,20 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code creates a window and runs the main loop until you close the window or press escape. If you've done everything right, the window should have a dark red background, look at the image below for reference.
+/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times. 
+///
+/// At this point you theoretically already have everything for making a basic game, the following chapters will lay the baseline for creating 3d graphics.
 ///<C
 int main(int argc, char **argv)
 {
-   RCG_init("retro computer graphics - chapter 1.1");
+   RCG_init("retro computer graphics - chapter 1.3");
+   RCG_palette_load("freedoom.hex");
 
    while(RCG_running())
    {
       RCG_update();
+
+      RCG_draw_clear(1);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
@@ -578,19 +627,19 @@ int main(int argc, char **argv)
 }
 
 ///>
-/// ![This is what you should be seeing, quite boring, isn't it?](/image/rcg_chapter1_1_0.png)
+/// ![This is what you should be seeing](/image/rcg_chapter1_3_0.png)
 ///
 /// Download
 /// ---------------------------
 ///
-/// Download this articles source code here: [chapter1_1.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_1.c)
+/// Download this articles source code here: [chapter1_3.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_3.c)
 ///
 /// ---------------------------
 /// Article Series:
 ///   * [retro computer graphics - Introduction](/rcg/)
-///   * retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input
+///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
-///   * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
+///   * retro computer graphics - Chapter 1.3 - Basic drawing
 ///   * [retro computer graphics - Part 5 - Image loading and drawing](part2.html)
 ///   * [retro computer graphics - Part 6 - Basic math routines](part2.html)
 ///   * [retro computer graphics - Part 7 - Colormaps: lighting and transparency](part3.html)

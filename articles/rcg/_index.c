@@ -45,7 +45,7 @@
 ///   * Chapter 1
 ///     * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///     * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
-///     * [retro computer graphics - Chapter 1.3 - Simple shapes drawing](part2.html)
+///     * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
 ///     * [retro computer graphics - Chapter 1.4 - Image loading and drawing](part2.html)
 ///     * [retro computer graphics - Chapter 1.5 - Basic math routines](part2.html)
 ///     * [retro computer graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
