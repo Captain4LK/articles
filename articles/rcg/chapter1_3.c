@@ -523,7 +523,7 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 
    uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x0];
    for(int x = x0;x<=x1;x++)
-      *(dst++) = index;
+      *(dst++) = color;
 }
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
@@ -533,21 +533,132 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
       return;
 
    //Already fully inside? Skip the clipping
-   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RVR_YRES)
+   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
    {
-      //Clip top
-      if(y0<y1)
+      int dx = x1-x0;
+      int dy = y1-y0;
+
+      //p0 top
+      if(y0<0)
       {
-         x0 = x0+(-x1*(y0-x0))/(y1-x1);
+         x0 = x0+(-y0*dx)/dy;
          y0 = 0;
       }
-      else
+      //p0 left 
+      if(x0<0)
       {
-         x1 = x1+(-x0*(y1-x1))/(y0-x0);
-         y1 = 0;
+         y0 = y0+(-x0*dy)/dx;
+         x0 = 0;
+      }
+      //p0 bottom
+      if(y0>=RCG_YRES)
+      {
+         x0 = x0+((RCG_YRES-1-y0)*dx)/dy;
+         y0 = RCG_YRES-1;
+      }
+      //p0 right
+      if(x0>=RCG_XRES)
+      {
+         y0 = y0+((RCG_XRES-1-x0)*dy)/dx;
+         x0 = RCG_XRES-1;
       }
 
-      //Clip bottom
+      //p1 top
+      if(y1<0)
+      {
+         x1 = x1+(-y1*dx)/dy;
+         y1 = 0;
+      }
+      //p1 left 
+      if(x1<0)
+      {
+         y1 = y1+(-x1*dy)/dx;
+         x1 = 0;
+      }
+      //p1 bottom
+      if(y1>=RCG_YRES)
+      {
+         x1 = x1+((RCG_YRES-1-y1)*dx)/dy;
+         y1 = RCG_YRES-1;
+      }
+      //p1 right
+      if(x1>=RCG_XRES)
+      {
+         y1 = y1+((RCG_XRES-1-x1)*dy)/dx;
+         x1 = RCG_XRES-1;
+      }
+   }
+
+   //Still outside? Don't draw anything
+   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+      return;
+
+   int dx = abs(x1-x0)+1;
+   int dy = abs(y1-y0)+1;
+   if(dx>dy)
+   {
+      if(x1<x0)
+      {
+         int t = x0;
+         x0 = x1;
+         x1 = t;
+         
+         t = y0;
+         y0 = y1;
+         y1 = t;
+      }
+
+      int change = RCG_XRES;
+      if(y0>y1)
+         change = -RCG_XRES;
+      int error = 0;
+      int count = dx;
+
+      uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x0];
+      while(count--)
+      {
+         *(dst++) = color;
+         error+=dy;
+
+         if(error>dx)
+         {
+            dst+=change;
+            error-=dx;
+         }
+      }
+   }
+   else
+   {
+      if(y1<y0)
+      {
+         int t = x0;
+         x0 = x1;
+         x1 = t;
+         
+         t = y0;
+         y0 = y1;
+         y1 = t;
+      }
+
+      int change = 1;
+      if(x0>x1)
+         change = -1;
+      int error = 0;
+      int count = dy;
+
+      uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x0];
+      while(count--)
+      {
+         *dst = color;
+         dst+=RCG_XRES;
+         error+=dx;
+
+         if(error>dy)
+         {
+            dst+=change;
+            error-=dy;
+         }
+      }
    }
 }
 
@@ -580,12 +691,12 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
    x = x<0?0:x;
    y = y<0?0:y;
 
-   uint8_t * restrict dst = &RCG_core_framebuffer()[y*RCG_XRES+x];
+   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x];
    int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
     
    for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
       for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
-         *dst = index;
+         *dst = color;
 }
 ///>
 
@@ -635,8 +746,6 @@ int main(int argc, char **argv)
    while(RCG_running())
    {
       RCG_update();
-
-      RCG_draw_clear(1);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
