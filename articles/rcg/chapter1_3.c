@@ -14,7 +14,7 @@
 ///
 /// In this article we'll implement a few simple drawing routines.
 ///
-/// Instead of using a 24bit color framebuffer directly, the framebuffer instead contains indices into an array of colors (the color palette). Since our framebuffer is an array of 8 bit integers, we have a maximum of 255 (0 is reserved for transparancy) color availible. This might seem too low to create 3d graphics, including basic lighting, at first, but in later articles we are going to discuss techniques helping to use these colors to their maximum.
+/// The key to writing a fast software renderer is to both draw as few pixels as possible (minimize overdraw) and to do as little work as possible per pixel drawn. For this chapter specifically this means that clipping for the drawn shapes should happen outside of the actual drawing. How
 ///
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,17 +114,22 @@ RCG_color *RCG_palette(void);
 /// Function prototypes
 /// ---------------------------
 ///<C
-//
+//Clears the screen to the given color
 void RCG_draw_clear(uint8_t color);
 
+//Draws a vertical line
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color);
 
+//Draws a horizontal line
 void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color);
 
+//Draws a line between two points
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color);
 
+//Draws the outline of a rectangle
 void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color);
 
+//Draws a filled rectangle
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color);
 ///>
 
@@ -473,12 +478,19 @@ uint8_t *RCG_framebuffer(void)
 
 /// Implementation
 /// ---------------------------
+///
+/// RCG_draw_clear() can be implemented with a single call to memset
 ///<C
 void RCG_draw_clear(uint8_t color)
 {
    memset(rcg_framebuffer,color,RCG_XRES*RCG_YRES);
 }
+///>
 
+/// RCG_draw_line_vertical() and RCG_draw_line_horizontal().
+///
+/// You might wonder why these two functions exists, when there is also going to be a general purpose line drawing function RCG_draw_line(). 
+///<C
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 {
    if(y0>y1)
@@ -525,6 +537,49 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
    for(int x = x0;x<=x1;x++)
       *(dst++) = color;
 }
+
+void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
+{
+   RCG_draw_line_horizontal(x,y,x+width,color);
+   RCG_draw_line_horizontal(x,y+height,x+width,color);
+   RCG_draw_line_vertical(x,y+1,y+height-1,color);
+   RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
+}
+
+void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
+{
+   //Clip src rect
+   int draw_start_y = 0;
+   int draw_start_x = 0;
+   int draw_end_x = width;
+   int draw_end_y = height;
+
+   if(x<0)
+      draw_start_x = -x;
+   if(y<0)
+      draw_start_y = -y;
+   if(x+draw_end_x>RCG_XRES)
+      draw_end_x = width+(RCG_XRES-x-draw_end_x);
+   if(y+draw_end_y>RCG_YRES)
+      draw_end_y = height+(RCG_YRES-y-draw_end_y);
+    
+   //Clip dst rect
+   x = x<0?0:x;
+   y = y<0?0:y;
+
+   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x];
+   int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
+    
+   for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
+      for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
+         *dst = color;
+}
+///>
+
+/// Exercise
+/// ---------------------------
+///
+/// You might have noticed that I didn't cover RCG_draw_line() in the last section. 
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
@@ -662,44 +717,6 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    }
 }
 
-void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
-{
-   RCG_draw_line_horizontal(x,y,x+width,color);
-   RCG_draw_line_horizontal(x,y+height,x+width,color);
-   RCG_draw_line_vertical(x,y+1,y+height-1,color);
-   RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
-}
-
-void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
-{
-   //Clip src rect
-   int draw_start_y = 0;
-   int draw_start_x = 0;
-   int draw_end_x = width;
-   int draw_end_y = height;
-
-   if(x<0)
-      draw_start_x = -x;
-   if(y<0)
-      draw_start_y = -y;
-   if(x+draw_end_x>RCG_XRES)
-      draw_end_x = width+(RCG_XRES-x-draw_end_x);
-   if(y+draw_end_y>RCG_YRES)
-      draw_end_y = height+(RCG_YRES-y-draw_end_y);
-    
-   //Clip dst rect
-   x = x<0?0:x;
-   y = y<0?0:y;
-
-   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x];
-   int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
-    
-   for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
-      for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
-         *dst = color;
-}
-///>
-
 static void rcg_update_viewport(void)
 {
    int window_width = 1;
@@ -734,9 +751,8 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times. 
+/// This articles example code demonstrates the various drawing functions discussed in this chapter.
 ///
-/// At this point you theoretically already have everything for making a basic game, the following chapters will lay the baseline for creating 3d graphics.
 ///<C
 int main(int argc, char **argv)
 {

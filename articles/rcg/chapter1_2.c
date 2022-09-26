@@ -57,7 +57,7 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
-//Additionally, we'll need a way to represent color, the rendering itself will be palettized, max 256 colors, but we'll still need to store a color palette in 24bit color
+//Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r,g,b,a;
@@ -175,7 +175,7 @@ void RCG_palette_load(const char *path)
    //which due to the simple format of the file would be very easy to implement in this case
    char buffer[512];
    int color = 0;
-   while(fgets(buffer,512,f))
+   while(fgets(buffer,512,f)&&color<256)
    {
       unsigned r,g,b;
       sscanf(buffer,"%2x%2x%2x",&r,&g,&b);
@@ -508,6 +508,22 @@ static void rcg_update_viewport(void)
 
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
+
+/// Exercise
+/// ---------------------------
+/// 
+/// Starting from this chapter I will occasionally add an (usually) optional exercise at the end of the chapter. 
+///
+/// Here is this weeks exercise:
+///
+/// Write a program that converts different palette formats (.png, .gpl, .pal, etc.) to the hex format used in this chapter.
+///
+/// Notes:
+///   * List of many palette formats with examples: http://www.selapa.net/swatches/colors/fileformats.php
+///   * Easy to use png loaders:
+///      * [cute_png](https://github.com/RandyGaul/cute_headers)
+///      * [stb_image](https://github.com/nothings/stb)
+///
 
 #endif
 #endif
