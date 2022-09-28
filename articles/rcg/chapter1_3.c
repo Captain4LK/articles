@@ -479,7 +479,7 @@ uint8_t *RCG_framebuffer(void)
 /// Implementation
 /// ---------------------------
 ///
-/// RCG_draw_clear() can be implemented with a single call to memset
+/// RCG_draw_clear() can be implemented with a single call to memset. We won't use this function very often later, since we usually redraw the entire screen anyway, clearing it would only hurt performance.
 ///<C
 void RCG_draw_clear(uint8_t color)
 {
@@ -489,7 +489,7 @@ void RCG_draw_clear(uint8_t color)
 
 /// RCG_draw_line_vertical() and RCG_draw_line_horizontal().
 ///
-/// You might wonder why these two functions exists, when there is also going to be a general purpose line drawing function RCG_draw_line(). 
+/// You might wonder why these two functions exists, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape 
 ///<C
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 {
@@ -515,7 +515,10 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
       dst+=RCG_XRES;
    }
 }
+///>
 
+/// RCG_draw_line_horizontal() is basically the same,
+///<C
 void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 {
    if(x0>x1)
@@ -537,15 +540,22 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
    for(int x = x0;x<=x1;x++)
       *(dst++) = color;
 }
+///>
 
+/// RCG_draw_rectangle() can be implemented using our new vertical and horizontal line drawing functions.
+///<C
 void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
 {
+   //The offsets in the coordinates are to make sure the individual lines don't overlap
    RCG_draw_line_horizontal(x,y,x+width,color);
    RCG_draw_line_horizontal(x,y+height,x+width,color);
    RCG_draw_line_vertical(x,y+1,y+height-1,color);
    RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
 }
+///>
 
+/// RCG_draw_rectangle_fill() 
+///<C
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 {
    //Clip src rect
@@ -575,11 +585,6 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
          *dst = color;
 }
 ///>
-
-/// Exercise
-/// ---------------------------
-///
-/// You might have noticed that I didn't cover RCG_draw_line() in the last section. 
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
@@ -743,6 +748,22 @@ static void rcg_update_viewport(void)
    rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
 }
 
+/// Exercise
+/// ---------------------------
+///
+/// You might have noticed that I didn't cover RCG_draw_line() in the last section. That's because it will be your exercise for this article. Don't worry, the source code of this article has an implementation, too, if you are too lazy to do it yourself.
+///
+/// Notes:
+/// * Wikipedia articles:
+///   * [Line drawing algorithm](https://en.wikipedia.org/wiki/Line_drawing_algorithm)
+///   * [Digital differential analyzer](https://en.wikipedia.org/wiki/Digital_differential_analyzer_(graphics_algorithm))
+///   * [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm), the one I usually use
+///   * [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm)
+/// * Bonus challenges:
+///   * clip the line before renderingt, getting rid of per pixel bounds checks (implemented in this chapters source code)
+///   * make a version that takes fixed point numbers as parameters and render the line with sub-pixel accuracy
+///
+
 #endif
 #endif
 
@@ -762,6 +783,14 @@ int main(int argc, char **argv)
    while(RCG_running())
    {
       RCG_update();
+
+      RCG_draw_clear(1);
+
+      RCG_draw_line_vertical(16,32,128,53);
+      RCG_draw_line_horizontal(64,64,192,123);
+      RCG_draw_rectangle(256,256,128,96,201);
+      RCG_draw_rectangle_fill(300,16,128,96,222);
+      RCG_draw_line(96,96,512,256,141);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
