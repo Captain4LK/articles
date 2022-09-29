@@ -57,7 +57,7 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
-//Additionally, we'll need a way to represent color, the rendering itself will be palettized, max 256 colors, but we'll still need to store a color palette in 24bit color
+//Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r,g,b,a;
@@ -402,7 +402,7 @@ void RCG_render_present(void)
    dst_rect.h = rcg_view_height;
    SDL_RenderCopy(rcg_sdl_renderer,rcg_sdl_texture,NULL,&dst_rect);
 
-   //Actuall show what was rendered
+   //Actually show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
 }
 
@@ -489,10 +489,15 @@ void RCG_draw_clear(uint8_t color)
 
 /// RCG_draw_line_vertical() and RCG_draw_line_horizontal().
 ///
-/// You might wonder why these two functions exists, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape 
+/// You might wonder why these two functions exist, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape is within certain constraints, it's faster to write a specialized function for drawing it.
+///
+/// For example, we'll use these functions in the early sub chapters of the raycasting renderer for drawing solid colored walls.
+/// 
 ///<C
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 {
+   //Swap the two y coordinates if necessary, placing the upper (smaller) one in y0.
+   //Doing this makes the later clipping simpler, since we can make assumptions about the values of y0 and y1.
    if(y0>y1)
    {
       int t = y0;
@@ -500,14 +505,19 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
       y1 = t;
    }
 
+   //Early out the line if it's completely outside the screen
    if(x<0||x>=RCG_XRES||y0>=RCG_YRES||y1<0)
       return;
 
+   //Clip the line to the screen boundaries
    if(y0<0)
       y0 = 0;
    if(y1>=RCG_YRES)
       y1 = RCG_YRES-1;
 
+   //Now, we draw the line
+   // We access the framebuffer using a pointer, which we increment after every pixel written.
+   // In my experience, the compiler optimizes code better if you access arrays by incrementing a pointer.
    uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x];
    for(int y = y0;y<=y1;y++)
    {
@@ -517,7 +527,7 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 }
 ///>
 
-/// RCG_draw_line_horizontal() is basically the same,
+/// RCG_draw_line_horizontal() is basically the same, with x and y coordinates being swapped.
 ///<C
 void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 {
@@ -554,41 +564,59 @@ void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
 }
 ///>
 
-/// RCG_draw_rectangle_fill() 
+/// RCG_draw_rectangle_fill() is a little more complicated since it requires clipping in two dimensions instead of one like for the lines.
+/// 
+/// The clipping is admittedly more complicated than it needs to be, we are however going to reuse this clipping code when drawing sprites (hence the draw_start and draw_end instead of just a clipped width/height).
 ///<C
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 {
-   //Clip src rect
+   //these variables are positions inside the drawn rectangle
+   //i.e. width = draw_end_x-draw_start_x
    int draw_start_y = 0;
    int draw_start_x = 0;
    int draw_end_x = width;
    int draw_end_y = height;
 
+   //Here we clip the source rectangle, changing
+   //its width and height to fit the screen
+
+   //if the starting coordinates are n below zero
+   //we start drawing the rectangle n pixels later
    if(x<0)
       draw_start_x = -x;
    if(y<0)
       draw_start_y = -y;
+
+   //if the end coordinates are m above the width/height
+   //we stop drawing the rectangle m pixels earlier
    if(x+draw_end_x>RCG_XRES)
       draw_end_x = width+(RCG_XRES-x-draw_end_x);
    if(y+draw_end_y>RCG_YRES)
       draw_end_y = height+(RCG_YRES-y-draw_end_y);
     
-   //Clip dst rect
+   //Now we clamp the drawn position of the rectangle
+   //Only clamping to 0 is necessary, the rest is taken care
+   //of by the previous clipping
    x = x<0?0:x;
    y = y<0?0:y;
 
+   //Drawing is essentially the same as for the lines, just in two dimensions
+   //instead. Additionally we need to calculate 
+   //the amount to increment the pointer every line by (dst_tsep)
    uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x];
    int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
-    
    for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
       for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
          *dst = color;
 }
 ///>
+///
+/// Alternatively you could implement RCG_draw_rectangle_fill() by drawing horizontal lines for every y pixel of the rectangle.
+/// 
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
-   //Line fully ouside of screen? Don't need to do anything
+   //Line fully outside of screen? Don't need to do anything
    if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_YRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
       return;
 
