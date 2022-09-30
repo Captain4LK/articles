@@ -6,7 +6,7 @@
 
 ///////////////////////
 /// ---
-/// title: "Retro Computer Graphics - Chapter 1.3 - Basic drawing"
+/// title: "Retro Computer Graphics - Chapter 1.4 - Basic math routines"
 /// ---
 ///
 /// Introduction
@@ -14,7 +14,6 @@
 ///
 /// In this article we'll implement a few simple drawing routines.
 ///
-/// The key to writing a fast software renderer is to both draw as few pixels as possible (minimize overdraw) and to do as little work as possible per pixel drawn. For this chapter specifically this means that clipping for the drawn shapes should happen outside of the actual drawing. How
 ///
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,6 +61,15 @@ typedef struct
 {
    uint8_t r,g,b,a;
 }RCG_color;
+
+///
+/// Typedefs
+/// ---------------------------
+///
+/// We are going to typedef a fixed point type to easier differntiate normal integer math and fixed point math in the code. Specifically we'll use mostly 16:16 fixed point numbers.
+///<C
+typedef int32_t RCG_fix16;
+///>
 
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
@@ -111,9 +119,6 @@ void RCG_palette_load(const char *path);
 //Returns a pointer to the palette
 RCG_color *RCG_palette(void);
 
-/// Function prototypes
-/// ---------------------------
-///<C
 //Clears the screen to the given color
 void RCG_draw_clear(uint8_t color);
 
@@ -131,6 +136,37 @@ void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color);
 
 //Draws a filled rectangle
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color);
+
+/// Function prototypes
+/// ---------------------------
+///
+/// The function names should be pretty self explanatory.
+///<C
+RCG_fix16 RCG_fix16_mul(RCG_fix16 a, RCG_fix16 b);
+
+RCG_fix16 RCG_fix16_div(RCG_fix16 a, RCG_fix16 b);
+
+RCG_fix16 RCG_fix16_sin(RCG_fix16 a);
+
+RCG_fix16 RCG_fix16_cos(RCG_fix16 a);
+
+RCG_fix16 RCG_fix16_tan(RCG_fix16 a);
+
+RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y);
+
+//More accurate version of atan2, but uses more multiplications
+RCG_fix16 RCG_fix16_atan2_slow(RCG_fix16 x, RCG_fix16 y);
+
+RCG_fix16 RCG_fix16_sqrt(RCG_fix16 a);
+///>
+
+/// Macros
+/// ---------------------------
+///
+///<C
+#define RCG_min(a,b) ((a)<(b)?(a):(b))
+#define RCG_max(a,b) ((a)>(b)?(a):(b))
+#define RCG_abs(a) ((a)<0?-(a):(a))
 ///>
 
 #endif
@@ -168,6 +204,10 @@ static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
 
 static RCG_color rcg_palette[256];
+
+/// Variables
+/// ---------------------------
+///
 
 void RCG_palette_load(const char *path)
 {
@@ -476,24 +516,11 @@ uint8_t *RCG_framebuffer(void)
    return rcg_framebuffer;
 }
 
-/// Implementation
-/// ---------------------------
-///
-/// RCG_draw_clear() can be implemented with a single call to memset. We won't use this function very often later, since we usually redraw the entire screen anyway, clearing it would only hurt performance.
-///<C
 void RCG_draw_clear(uint8_t color)
 {
    memset(rcg_framebuffer,color,RCG_XRES*RCG_YRES);
 }
-///>
 
-/// RCG_draw_line_vertical() and RCG_draw_line_horizontal().
-///
-/// You might wonder why these two functions exist, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape is within certain constraints, it's faster to write a specialized function for drawing it.
-///
-/// For example, we'll use these functions in the early sub chapters of the raycasting renderer for drawing solid colored walls.
-/// 
-///<C
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 {
    //Swap the two y coordinates if necessary, placing the upper (smaller) one in y0.
@@ -525,10 +552,7 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
       dst+=RCG_XRES;
    }
 }
-///>
 
-/// RCG_draw_line_horizontal() is basically the same, with x and y coordinates being swapped.
-///<C
 void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 {
    if(x0>x1)
@@ -550,10 +574,7 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
    for(int x = x0;x<=x1;x++)
       *(dst++) = color;
 }
-///>
 
-/// RCG_draw_rectangle() can be implemented using our new vertical and horizontal line drawing functions.
-///<C
 void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
 {
    //The offsets in the coordinates are to make sure the individual lines don't overlap
@@ -562,12 +583,7 @@ void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
    RCG_draw_line_vertical(x,y+1,y+height-1,color);
    RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
 }
-///>
 
-/// RCG_draw_rectangle_fill() is a little more complicated since it requires clipping in two dimensions instead of one like for the lines.
-/// 
-/// The clipping is admittedly more complicated than it needs to be, we are however going to reuse this clipping code when drawing sprites (hence the draw_start and draw_end instead of just a clipped width/height).
-///<C
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 {
    //these variables are positions inside the drawn rectangle
@@ -609,10 +625,6 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
       for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
          *dst = color;
 }
-///>
-///
-/// Alternatively you could implement RCG_draw_rectangle_fill() by drawing horizontal lines for every y pixel of the rectangle.
-/// 
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
@@ -750,6 +762,45 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    }
 }
 
+/// Implementation
+/// ---------------------------
+///
+///<C
+RCG_fix16 RCG_fix16_mul(RCG_fix16 a, RCG_fix16 b)
+{
+
+}
+
+RCG_fix16 RCG_fix16_div(RCG_fix16 a, RCG_fix16 b)
+{
+}
+
+RCG_fix16 RCG_fix16_sin(RCG_fix16 a)
+{
+}
+
+RCG_fix16 RCG_fix16_cos(RCG_fix16 a)
+{
+}
+
+RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
+{
+}
+
+RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
+{
+}
+
+//More accurate version of atan2, but uses more multiplications
+RCG_fix16 RCG_fix16_atan2_slow(RCG_fix16 x, RCG_fix16 y)
+{
+}
+
+RCG_fix16 RCG_fix16_sqrt(RCG_fix16 a)
+{
+}
+///>
+
 static void rcg_update_viewport(void)
 {
    int window_width = 1;
@@ -842,8 +893,8 @@ int main(int argc, char **argv)
 ///   * [retro computer graphics - Introduction](/rcg/)
 ///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
-///   * retro computer graphics - Chapter 1.3 - Basic drawing
-///   * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
+///   * retro computer graphics - Chapter 1.4 - Basic math routines
 ///
 
 #endif
