@@ -768,11 +768,12 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 ///<C
 RCG_fix16 RCG_fix16_mul(RCG_fix16 a, RCG_fix16 b)
 {
-
+   return (RCG_fix16)((int64_t)a*b>>16);
 }
 
 RCG_fix16 RCG_fix16_div(RCG_fix16 a, RCG_fix16 b)
 {
+   return (RCG_fix16)(((int64_t)<<16)/b);
 }
 
 RCG_fix16 RCG_fix16_sin(RCG_fix16 a)
@@ -785,6 +786,7 @@ RCG_fix16 RCG_fix16_cos(RCG_fix16 a)
 
 RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
 {
+   return RCG_fix16_div(RCG_fix16_sin(a),RCG_fix16_cos(a));
 }
 
 RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
