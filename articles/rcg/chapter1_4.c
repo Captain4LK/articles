@@ -1056,8 +1056,8 @@ RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
 
 RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
 {
-   RCG_fix16 coeff_1 = 16384; // = pi/4
-   RCG_fix16 coeff_2 = 49152; // = (3*pi)/4
+   RCG_fix16 coeff_1 = 8192; // = pi/4
+   RCG_fix16 coeff_2 = 24576; // = (3*pi)/4
    RCG_fix16 abs_y = RCG_non_zero(RCG_abs(y));
    RCG_fix16 angle = 0;
 
@@ -1082,8 +1082,8 @@ RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
 ///<C
 RCG_fix16 RCG_fix16_atan2_slow(RCG_fix16 x, RCG_fix16 y)
 {
-   RCG_fix16 coeff_1 = 16384; // = pi/4
-   RCG_fix16 coeff_2 = 49152; // = (3*pi)/4
+   RCG_fix16 coeff_1 = 8192; // = pi/4
+   RCG_fix16 coeff_2 = 24576; // = (3*pi)/4
    RCG_fix16 abs_y = RCG_non_zero(RCG_abs(y));
    RCG_fix16 angle = 0;
 
@@ -1179,7 +1179,7 @@ static void rcg_update_viewport(void)
 ///<C
 int main(int argc, char **argv)
 {
-   RCG_init("retro computer graphics - chapter 1.3");
+   RCG_init("retro computer graphics - chapter 1.4");
    RCG_palette_load("freedoom.hex");
 
    RCG_fix16 angle = 0;
@@ -1196,13 +1196,13 @@ int main(int argc, char **argv)
       angle+=128;
 
       int angle_calc = RCG_fix16_atan2(x,y);
-      int sx = RCG_fix16_cos(angle)/384;
-      int sy = RCG_fix16_sin(angle)/384;
+      int sx = RCG_fix16_cos(angle_calc)/384;
+      int sy = RCG_fix16_sin(angle_calc)/384;
       RCG_draw_line(RCG_XRES/2,RCG_YRES/2,RCG_XRES/2+sx,RCG_YRES/2+sy,5);
 
       angle_calc = RCG_fix16_atan2_slow(x,y);
-      sx = RCG_fix16_cos(angle)/512;
-      sy = RCG_fix16_sin(angle)/512;
+      sx = RCG_fix16_cos(angle_calc)/512;
+      sy = RCG_fix16_sin(angle_calc)/512;
       RCG_draw_line(RCG_XRES/2,RCG_YRES/2,RCG_XRES/2+sx,RCG_YRES/2+sy,177);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
