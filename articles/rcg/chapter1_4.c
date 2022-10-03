@@ -1039,14 +1039,14 @@ RCG_fix16 RCG_fix16_div(RCG_fix16 a, RCG_fix16 b)
    return (RCG_fix16)(((int64_t)a<<16)/b);
 }
 
-RCG_fix16 RCG_fix16_sin(RCG_fix16 a)
-{
-   return RCG_fix16_cos(a-16384);
-}
-
 RCG_fix16 RCG_fix16_cos(RCG_fix16 a)
 {
    return rcg_cos_table[(a>>3)&8191];
+}
+
+RCG_fix16 RCG_fix16_sin(RCG_fix16 a)
+{
+   return RCG_fix16_cos(a-16384);
 }
 
 RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
@@ -1054,6 +1054,10 @@ RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
    return RCG_fix16_div(RCG_fix16_sin(a),RCG_fix16_cos(a));
 }
 
+///>
+/// RCG_fix16_atan2() and RCG_fix16_atan2_slow()
+///
+///<C
 RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
 {
    RCG_fix16 coeff_1 = 8192; // = pi/4
@@ -1174,7 +1178,7 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code demonstrates the various drawing functions discussed in this chapter.
+/// This articles example code demonstrates RCG_fix16_cos/sin() and the two atan2() implementations, by drawing three rotating lines. The gray line is the reference line, showing the exact rotation angle. The white line represents the rotation angle calculated by RCG_fix16_atan2(), the red line the one calculated by RCG_fix16_atan2_slow(). As you can clearly see, the atan2 approximation used by RCG_fix16_atan2_slow() is quite accurate.
 ///
 ///<C
 int main(int argc, char **argv)
