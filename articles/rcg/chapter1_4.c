@@ -167,6 +167,7 @@ RCG_fix16 RCG_fix16_sqrt(RCG_fix16 a);
 #define RCG_min(a,b) ((a)<(b)?(a):(b))
 #define RCG_max(a,b) ((a)>(b)?(a):(b))
 #define RCG_abs(a) ((a)<0?-(a):(a))
+#define RCG_non_zero(a) ((a)+((a)==0)) //To prevent zero divisions.
 ///>
 
 #endif
@@ -791,6 +792,25 @@ RCG_fix16 RCG_fix16_tan(RCG_fix16 a)
 
 RCG_fix16 RCG_fix16_atan2(RCG_fix16 x, RCG_fix16 y)
 {
+   RCG_fix16 coeff_1 = 16384; // = pi/4
+   RCG_fix16 coeff_2 = 49152; // = (3*pi)/4
+   RCG_fix16 abs_y = RCG_non_zero(RvR_abs(y));
+   RCG_fix16 angle = 0;
+
+   if(x>=0)
+   {
+      RCG_fix16 r = ((x-abs_y)*1024)/(x+abs_y);
+      angle = coeff_1-(r*coeff_1)/1024;
+   }
+   else
+   {
+      RCG_fix16 r = ((x+abs_y)*1024)/(abs_y-x);
+      angle = coeff_2-(r*coeff_1)/1024;
+   }
+
+   if(y<0)
+      return -angle;
+   return angle;
 }
 
 //More accurate version of atan2, but uses more multiplications
@@ -800,6 +820,22 @@ RCG_fix16 RCG_fix16_atan2_slow(RCG_fix16 x, RCG_fix16 y)
 
 RCG_fix16 RCG_fix16_sqrt(RCG_fix16 a)
 {
+   RCG_fix16 b = 1<<30;
+   RCG_fix16 result = 0;
+
+   while(b>64)
+   {
+      RCG_fix16 t = result+b;
+      if(a>=t)
+      {
+         a-=t;
+         result = t+b;
+      }
+      a<<=1;
+      b>>=1;
+   }
+
+   return result>>8;
 }
 ///>
 
