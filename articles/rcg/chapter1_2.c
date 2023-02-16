@@ -27,31 +27,31 @@
 
 #define RCG_FPS 30
 
-typedef enum 
+typedef enum
 {
    RCG_KEY_NONE,
 
    //Keyboard keys
-   RCG_KEY_A,RCG_KEY_B,RCG_KEY_C,RCG_KEY_D,RCG_KEY_E,RCG_KEY_F,RCG_KEY_G,
-   RCG_KEY_H,RCG_KEY_I,RCG_KEY_J,RCG_KEY_K,RCG_KEY_L,RCG_KEY_M,RCG_KEY_N,
-   RCG_KEY_O,RCG_KEY_P,RCG_KEY_Q,RCG_KEY_R,RCG_KEY_S,RCG_KEY_T,RCG_KEY_U,
-   RCG_KEY_V,RCG_KEY_W,RCG_KEY_X,RCG_KEY_Y,RCG_KEY_Z,
-   RCG_KEY_0,RCG_KEY_1,RCG_KEY_2,RCG_KEY_3,RCG_KEY_4,RCG_KEY_5,
-   RCG_KEY_6,RCG_KEY_7,RCG_KEY_8,RCG_KEY_9, RCG_KEY_COMMA, RCG_KEY_PERIOD,
-   RCG_KEY_F1,RCG_KEY_F2,RCG_KEY_F3,RCG_KEY_F4,RCG_KEY_F5,RCG_KEY_F6,
-   RCG_KEY_F7,RCG_KEY_F8,RCG_KEY_F9,RCG_KEY_F10,RCG_KEY_F11,RCG_KEY_F12,
-   RCG_KEY_UP,RCG_KEY_DOWN,RCG_KEY_LEFT,RCG_KEY_RIGHT,
-   RCG_KEY_SPACE,RCG_KEY_TAB,RCG_KEY_LSHIFT,RCG_KEY_RSHIFT,RCG_KEY_LCTRL,RCG_KEY_RCTRL,
+   RCG_KEY_A, RCG_KEY_B, RCG_KEY_C, RCG_KEY_D, RCG_KEY_E, RCG_KEY_F, RCG_KEY_G,
+   RCG_KEY_H, RCG_KEY_I, RCG_KEY_J, RCG_KEY_K, RCG_KEY_L, RCG_KEY_M, RCG_KEY_N,
+   RCG_KEY_O, RCG_KEY_P, RCG_KEY_Q, RCG_KEY_R, RCG_KEY_S, RCG_KEY_T, RCG_KEY_U,
+   RCG_KEY_V, RCG_KEY_W, RCG_KEY_X, RCG_KEY_Y, RCG_KEY_Z,
+   RCG_KEY_0, RCG_KEY_1, RCG_KEY_2, RCG_KEY_3, RCG_KEY_4, RCG_KEY_5,
+   RCG_KEY_6, RCG_KEY_7, RCG_KEY_8, RCG_KEY_9, RCG_KEY_COMMA, RCG_KEY_PERIOD,
+   RCG_KEY_F1, RCG_KEY_F2, RCG_KEY_F3, RCG_KEY_F4, RCG_KEY_F5, RCG_KEY_F6,
+   RCG_KEY_F7, RCG_KEY_F8, RCG_KEY_F9, RCG_KEY_F10, RCG_KEY_F11, RCG_KEY_F12,
+   RCG_KEY_UP, RCG_KEY_DOWN, RCG_KEY_LEFT, RCG_KEY_RIGHT,
+   RCG_KEY_SPACE, RCG_KEY_TAB, RCG_KEY_LSHIFT, RCG_KEY_RSHIFT, RCG_KEY_LCTRL, RCG_KEY_RCTRL,
    RCG_KEY_LALT, RCG_KEY_RALT, RCG_KEY_INS,
-   RCG_KEY_DEL,RCG_KEY_HOME,RCG_KEY_END,RCG_KEY_PGUP,RCG_KEY_PGDN,
-   RCG_KEY_BACK,RCG_KEY_ESCAPE,RCG_KEY_RETURN,RCG_KEY_ENTER,RCG_KEY_PAUSE,RCG_KEY_SCROLL,
-   RCG_KEY_NP0,RCG_KEY_NP1,RCG_KEY_NP2,RCG_KEY_NP3,RCG_KEY_NP4,RCG_KEY_NP5,RCG_KEY_NP6,RCG_KEY_NP7,RCG_KEY_NP8,RCG_KEY_NP9,
-   RCG_KEY_NP_MUL,RCG_KEY_NP_DIV,RCG_KEY_NP_ADD,RCG_KEY_NP_SUB,RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
+   RCG_KEY_DEL, RCG_KEY_HOME, RCG_KEY_END, RCG_KEY_PGUP, RCG_KEY_PGDN,
+   RCG_KEY_BACK, RCG_KEY_ESCAPE, RCG_KEY_RETURN, RCG_KEY_ENTER, RCG_KEY_PAUSE, RCG_KEY_SCROLL,
+   RCG_KEY_NP0, RCG_KEY_NP1, RCG_KEY_NP2, RCG_KEY_NP3, RCG_KEY_NP4, RCG_KEY_NP5, RCG_KEY_NP6, RCG_KEY_NP7, RCG_KEY_NP8, RCG_KEY_NP9,
+   RCG_KEY_NP_MUL, RCG_KEY_NP_DIV, RCG_KEY_NP_ADD, RCG_KEY_NP_SUB, RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
 
    //Mouse buttons
    //Functions for reading input won't differentiate between mouse and keyboard input.
    //This makes remapping keys easier, which won't be discussed in this series, though.
-   RCG_BUTTON_LEFT,RCG_BUTTON_RIGHT,RCG_BUTTON_MIDDLE,RCG_BUTTON_X1,RCG_BUTTON_X2,
+   RCG_BUTTON_LEFT, RCG_BUTTON_RIGHT, RCG_BUTTON_MIDDLE, RCG_BUTTON_X1, RCG_BUTTON_X2,
 
    //Last element, will be used as size for mapping array
    RCG_KEY_MAX,
@@ -60,7 +60,7 @@ typedef enum
 //Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
-   uint8_t r,g,b,a;
+   uint8_t r, g, b, a;
 }RCG_color;
 
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
@@ -166,7 +166,7 @@ static RCG_color rcg_palette[256];
 ///<C
 void RCG_palette_load(const char *path)
 {
-   FILE *f = fopen(path,"r");
+   FILE *f = fopen(path, "r");
    if(NULL==f)
       return;
 
@@ -175,10 +175,10 @@ void RCG_palette_load(const char *path)
    //which due to the simple format of the file would be very easy to implement in this case
    char buffer[512];
    int color = 0;
-   while(fgets(buffer,512,f)&&color<256)
+   while(fgets(buffer, 512, f)&&color<256)
    {
-      unsigned r,g,b;
-      sscanf(buffer,"%2x%2x%2x",&r,&g,&b);
+      unsigned r, g, b;
+      sscanf(buffer, "%2x%2x%2x", &r, &g, &b);
       rcg_palette[color].r = r;
       rcg_palette[color].g = g;
       rcg_palette[color].b = b;
@@ -200,34 +200,34 @@ RCG_color *RCG_palette(void)
 
 void RCG_init(const char *title)
 {
-   Uint32 flags = SDL_INIT_VIDEO|SDL_INIT_EVENTS;
+   Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
    SDL_Init(flags);
 
    //Calculate max possible window scale
    //This code is not necessarily needed, sine the window will be resizable
    //It's only here to make the window not be tiny on high-res displays
    int scale = 1;
-   int max_x,max_y;
+   int max_x, max_y;
    SDL_Rect max_size;
-   SDL_GetDisplayUsableBounds(0,&max_size);
-   max_x = max_size.w/RCG_XRES;
-   max_y = max_size.h/RCG_YRES;
+   SDL_GetDisplayUsableBounds(0, &max_size);
+   max_x = max_size.w / RCG_XRES;
+   max_y = max_size.h / RCG_YRES;
    scale = (max_x>max_y)?max_y:max_x;
 
    //Create window, renderer and texture for framebuffer
-   rcg_sdl_window = SDL_CreateWindow(title,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,RCG_XRES*scale,RCG_YRES*scale,SDL_WINDOW_RESIZABLE);
-   rcg_sdl_renderer = SDL_CreateRenderer(rcg_sdl_window,-1,SDL_RENDERER_ACCELERATED);
-   SDL_SetRenderDrawColor(rcg_sdl_renderer,0,0,0,0);
-   rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer,SDL_PIXELFORMAT_RGBA32,SDL_TEXTUREACCESS_STREAMING,RCG_XRES,RCG_YRES);
-   SDL_SetTextureBlendMode(rcg_sdl_texture,SDL_BLENDMODE_NONE);
+   rcg_sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, RCG_XRES * scale, RCG_YRES * scale, SDL_WINDOW_RESIZABLE);
+   rcg_sdl_renderer = SDL_CreateRenderer(rcg_sdl_window, -1, SDL_RENDERER_ACCELERATED);
+   SDL_SetRenderDrawColor(rcg_sdl_renderer, 0, 0, 0, 0);
+   rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, RCG_XRES, RCG_YRES);
+   SDL_SetTextureBlendMode(rcg_sdl_texture, SDL_BLENDMODE_NONE);
 
-   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
+   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
 
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
 
-   rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
-   memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
+   rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
+   memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
 
    rcg_key_map[0x00] = RCG_KEY_NONE;
    rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
@@ -303,7 +303,7 @@ void RCG_init(const char *title)
    rcg_key_map[SDL_SCANCODE_7] = RCG_KEY_7;
    rcg_key_map[SDL_SCANCODE_8] = RCG_KEY_8;
    rcg_key_map[SDL_SCANCODE_9] = RCG_KEY_9;
-   
+
    rcg_key_map[SDL_SCANCODE_COMMA] = RCG_KEY_COMMA;
    rcg_key_map[SDL_SCANCODE_PERIOD] = RCG_KEY_PERIOD;
 
@@ -333,13 +333,13 @@ void RCG_init(const char *title)
 
 void RCG_update(void)
 {
-   rcg_frametime = SDL_GetPerformanceCounter()-rcg_framestart;
+   rcg_frametime = SDL_GetPerformanceCounter() - rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
-      SDL_Delay(((rcg_framedelay-rcg_frametime)*1000)/SDL_GetPerformanceFrequency());
+      SDL_Delay(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency());
    rcg_framestart = SDL_GetPerformanceCounter();
 
    rcg_mouse_wheel = 0;
-   memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
+   memcpy(rcg_old_key_state, rcg_new_key_state, sizeof(rcg_new_key_state));
 
    SDL_Event event;
    while(SDL_PollEvent(&event))
@@ -364,7 +364,7 @@ void RCG_update(void)
       case SDL_MOUSEBUTTONUP:
          if(event.button.state==SDL_RELEASED)
             rcg_new_key_state[rcg_mouse_map[event.button.button]] = 0;
-         break;       
+         break;
       case SDL_MOUSEWHEEL:
          rcg_mouse_wheel = event.wheel.y;
          break;
@@ -383,7 +383,7 @@ void RCG_render_present(void)
    //SDL textures need to be locked to copy data to them
    void *data;
    int stride;
-   SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
+   SDL_LockTexture(rcg_sdl_texture, NULL, &data, &stride);
 
 /// Additionally, we'll change the loop from last time to instead copy the framebuffer to the texture,
 /// mapping the 8 bit indices to palette colors.
@@ -396,7 +396,7 @@ void RCG_render_present(void)
    const RCG_color * restrict pal = RCG_palette();
    const uint8_t * restrict src = RCG_framebuffer();
    RCG_color * restrict pix = data;
-   for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
+   for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
       pix[i] = pal[src[i]];
 ///>
    SDL_UnlockTexture(rcg_sdl_texture);
@@ -407,7 +407,7 @@ void RCG_render_present(void)
    dst_rect.y = rcg_view_y;
    dst_rect.w = rcg_view_width;
    dst_rect.h = rcg_view_height;
-   SDL_RenderCopy(rcg_sdl_renderer,rcg_sdl_texture,NULL,&dst_rect);
+   SDL_RenderCopy(rcg_sdl_renderer, rcg_sdl_texture, NULL, &dst_rect);
 
    //Actuall show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
@@ -455,27 +455,27 @@ int RCG_mouse_wheel_scroll(void)
 
 void RCG_mouse_pos(int *x, int *y)
 {
-   SDL_GetMouseState(x,y);
+   SDL_GetMouseState(x, y);
 
-   *x-=rcg_view_x;
-   *y-=rcg_view_y;
-   *x = *x/rcg_pixel_scale;
-   *y = *y/rcg_pixel_scale;
+   *x -= rcg_view_x;
+   *y -= rcg_view_y;
+   *x = *x / rcg_pixel_scale;
+   *y = *y / rcg_pixel_scale;
 
    if(*x>=RCG_XRES)
-     *x = RCG_XRES-1;
+      *x = RCG_XRES - 1;
    if(*y>=RCG_YRES)
-     *y = RCG_YRES-1;
+      *y = RCG_YRES - 1;
 
    if(*x<0)
-     *x = 0;
+      *x = 0;
    if(*y<0)
-     *y = 0;
+      *y = 0;
 }
 
 void RCG_mouse_relative_pos(int *x, int *y)
 {
-   SDL_GetRelativeMouseState(x,y);
+   SDL_GetRelativeMouseState(x, y);
 }
 
 uint8_t *RCG_framebuffer(void)
@@ -488,31 +488,31 @@ static void rcg_update_viewport(void)
    int window_width = 1;
    int window_height = 1;
 
-   SDL_GetWindowSize(rcg_sdl_window,&window_width,&window_height);
+   SDL_GetWindowSize(rcg_sdl_window, &window_width, &window_height);
 
-   float ratio = (float)window_width/(float)window_height;
+   float ratio = (float)window_width / (float)window_height;
 
-   if(ratio>(float)RCG_XRES/(float)RCG_YRES)
+   if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
       rcg_view_height = window_height;
-      rcg_view_width = ((float)RCG_XRES/(float)RCG_YRES)*(float)window_height;
+      rcg_view_width = ((float)RCG_XRES / (float)RCG_YRES) * (float)window_height;
    }
    else
    {
       rcg_view_width = window_width;
-      rcg_view_height = ((float)RCG_YRES/(float)RCG_XRES)*(float)window_width;
+      rcg_view_height = ((float)RCG_YRES / (float)RCG_XRES) * (float)window_width;
    }
 
-   rcg_view_x = (window_width-rcg_view_width)/2;
-   rcg_view_y = (window_height-rcg_view_height)/2;
+   rcg_view_x = (window_width - rcg_view_width) / 2;
+   rcg_view_y = (window_height - rcg_view_height) / 2;
 
-   rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
+   rcg_pixel_scale = (float)rcg_view_width / (float)RCG_XRES;
 }
 
 /// Exercise
 /// ---------------------------
-/// 
-/// Starting from this chapter I will occasionally add an (usually) optional exercise at the end of the chapter. 
+///
+/// Starting from this chapter I will occasionally add an (usually) optional exercise at the end of the chapter.
 ///
 /// Here is this weeks exercise:
 ///
@@ -533,7 +533,7 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times. 
+/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times.
 ///
 /// At this point you theoretically already have everything for making a basic game, the following chapters will lay the baseline for creating 3d graphics.
 ///<C
@@ -546,7 +546,7 @@ int main(int argc, char **argv)
    {
       RCG_update();
 
-      for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
+      for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
          RCG_framebuffer()[i] = i;
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))

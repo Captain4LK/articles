@@ -5,7 +5,7 @@
 ///
 /// Introduction
 /// ---------------------------
-/// 
+///
 /// This is the first article in a (hopefully) long series about old-school software rendering.
 /// All the code presented will be written in C99, using SDL2 for graphics output (to make the resulting code more cross platform)
 ///
@@ -19,7 +19,7 @@
 /// ---------------------------
 ///
 /// * I'm going to use 'RCG' as a prefix for functions/typedefs/etc. (standing for retro computer graphics). If the prefix is lowercase, the function/type is meant to be internal.
-/// * I'm not 
+/// * I'm not
 ///
 /// Assets
 /// ---------------------------

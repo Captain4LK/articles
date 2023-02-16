@@ -27,31 +27,31 @@
 
 #define RCG_FPS 30
 
-typedef enum 
+typedef enum
 {
    RCG_KEY_NONE,
 
    //Keyboard keys
-   RCG_KEY_A,RCG_KEY_B,RCG_KEY_C,RCG_KEY_D,RCG_KEY_E,RCG_KEY_F,RCG_KEY_G,
-   RCG_KEY_H,RCG_KEY_I,RCG_KEY_J,RCG_KEY_K,RCG_KEY_L,RCG_KEY_M,RCG_KEY_N,
-   RCG_KEY_O,RCG_KEY_P,RCG_KEY_Q,RCG_KEY_R,RCG_KEY_S,RCG_KEY_T,RCG_KEY_U,
-   RCG_KEY_V,RCG_KEY_W,RCG_KEY_X,RCG_KEY_Y,RCG_KEY_Z,
-   RCG_KEY_0,RCG_KEY_1,RCG_KEY_2,RCG_KEY_3,RCG_KEY_4,RCG_KEY_5,
-   RCG_KEY_6,RCG_KEY_7,RCG_KEY_8,RCG_KEY_9, RCG_KEY_COMMA, RCG_KEY_PERIOD,
-   RCG_KEY_F1,RCG_KEY_F2,RCG_KEY_F3,RCG_KEY_F4,RCG_KEY_F5,RCG_KEY_F6,
-   RCG_KEY_F7,RCG_KEY_F8,RCG_KEY_F9,RCG_KEY_F10,RCG_KEY_F11,RCG_KEY_F12,
-   RCG_KEY_UP,RCG_KEY_DOWN,RCG_KEY_LEFT,RCG_KEY_RIGHT,
-   RCG_KEY_SPACE,RCG_KEY_TAB,RCG_KEY_LSHIFT,RCG_KEY_RSHIFT,RCG_KEY_LCTRL,RCG_KEY_RCTRL,
+   RCG_KEY_A, RCG_KEY_B, RCG_KEY_C, RCG_KEY_D, RCG_KEY_E, RCG_KEY_F, RCG_KEY_G,
+   RCG_KEY_H, RCG_KEY_I, RCG_KEY_J, RCG_KEY_K, RCG_KEY_L, RCG_KEY_M, RCG_KEY_N,
+   RCG_KEY_O, RCG_KEY_P, RCG_KEY_Q, RCG_KEY_R, RCG_KEY_S, RCG_KEY_T, RCG_KEY_U,
+   RCG_KEY_V, RCG_KEY_W, RCG_KEY_X, RCG_KEY_Y, RCG_KEY_Z,
+   RCG_KEY_0, RCG_KEY_1, RCG_KEY_2, RCG_KEY_3, RCG_KEY_4, RCG_KEY_5,
+   RCG_KEY_6, RCG_KEY_7, RCG_KEY_8, RCG_KEY_9, RCG_KEY_COMMA, RCG_KEY_PERIOD,
+   RCG_KEY_F1, RCG_KEY_F2, RCG_KEY_F3, RCG_KEY_F4, RCG_KEY_F5, RCG_KEY_F6,
+   RCG_KEY_F7, RCG_KEY_F8, RCG_KEY_F9, RCG_KEY_F10, RCG_KEY_F11, RCG_KEY_F12,
+   RCG_KEY_UP, RCG_KEY_DOWN, RCG_KEY_LEFT, RCG_KEY_RIGHT,
+   RCG_KEY_SPACE, RCG_KEY_TAB, RCG_KEY_LSHIFT, RCG_KEY_RSHIFT, RCG_KEY_LCTRL, RCG_KEY_RCTRL,
    RCG_KEY_LALT, RCG_KEY_RALT, RCG_KEY_INS,
-   RCG_KEY_DEL,RCG_KEY_HOME,RCG_KEY_END,RCG_KEY_PGUP,RCG_KEY_PGDN,
-   RCG_KEY_BACK,RCG_KEY_ESCAPE,RCG_KEY_RETURN,RCG_KEY_ENTER,RCG_KEY_PAUSE,RCG_KEY_SCROLL,
-   RCG_KEY_NP0,RCG_KEY_NP1,RCG_KEY_NP2,RCG_KEY_NP3,RCG_KEY_NP4,RCG_KEY_NP5,RCG_KEY_NP6,RCG_KEY_NP7,RCG_KEY_NP8,RCG_KEY_NP9,
-   RCG_KEY_NP_MUL,RCG_KEY_NP_DIV,RCG_KEY_NP_ADD,RCG_KEY_NP_SUB,RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
+   RCG_KEY_DEL, RCG_KEY_HOME, RCG_KEY_END, RCG_KEY_PGUP, RCG_KEY_PGDN,
+   RCG_KEY_BACK, RCG_KEY_ESCAPE, RCG_KEY_RETURN, RCG_KEY_ENTER, RCG_KEY_PAUSE, RCG_KEY_SCROLL,
+   RCG_KEY_NP0, RCG_KEY_NP1, RCG_KEY_NP2, RCG_KEY_NP3, RCG_KEY_NP4, RCG_KEY_NP5, RCG_KEY_NP6, RCG_KEY_NP7, RCG_KEY_NP8, RCG_KEY_NP9,
+   RCG_KEY_NP_MUL, RCG_KEY_NP_DIV, RCG_KEY_NP_ADD, RCG_KEY_NP_SUB, RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
 
    //Mouse buttons
    //Functions for reading input won't differentiate between mouse and keyboard input.
    //This makes remapping keys easier, which won't be discussed in this series, though.
-   RCG_BUTTON_LEFT,RCG_BUTTON_RIGHT,RCG_BUTTON_MIDDLE,RCG_BUTTON_X1,RCG_BUTTON_X2,
+   RCG_BUTTON_LEFT, RCG_BUTTON_RIGHT, RCG_BUTTON_MIDDLE, RCG_BUTTON_X1, RCG_BUTTON_X2,
 
    //Last element, will be used as size for mapping array
    RCG_KEY_MAX,
@@ -60,7 +60,7 @@ typedef enum
 //Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
-   uint8_t r,g,b,a;
+   uint8_t r, g, b, a;
 }RCG_color;
 
 //Creates a sdl window, the framebuffer and initializes keycode LUTs
@@ -171,7 +171,7 @@ static RCG_color rcg_palette[256];
 
 void RCG_palette_load(const char *path)
 {
-   FILE *f = fopen(path,"r");
+   FILE *f = fopen(path, "r");
    if(NULL==f)
       return;
 
@@ -180,10 +180,10 @@ void RCG_palette_load(const char *path)
    //which due to the simple format of the file would be very easy to implement in this case
    char buffer[512];
    int color = 0;
-   while(fgets(buffer,512,f))
+   while(fgets(buffer, 512, f))
    {
-      unsigned r,g,b;
-      sscanf(buffer,"%2x%2x%2x",&r,&g,&b);
+      unsigned r, g, b;
+      sscanf(buffer, "%2x%2x%2x", &r, &g, &b);
       rcg_palette[color].r = r;
       rcg_palette[color].g = g;
       rcg_palette[color].b = b;
@@ -201,34 +201,34 @@ RCG_color *RCG_palette(void)
 
 void RCG_init(const char *title)
 {
-   Uint32 flags = SDL_INIT_VIDEO|SDL_INIT_EVENTS;
+   Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
    SDL_Init(flags);
 
    //Calculate max possible window scale
    //This code is not necessarily needed, sine the window will be resizable
    //It's only here to make the window not be tiny on high-res displays
    int scale = 1;
-   int max_x,max_y;
+   int max_x, max_y;
    SDL_Rect max_size;
-   SDL_GetDisplayUsableBounds(0,&max_size);
-   max_x = max_size.w/RCG_XRES;
-   max_y = max_size.h/RCG_YRES;
+   SDL_GetDisplayUsableBounds(0, &max_size);
+   max_x = max_size.w / RCG_XRES;
+   max_y = max_size.h / RCG_YRES;
    scale = (max_x>max_y)?max_y:max_x;
 
    //Create window, renderer and texture for framebuffer
-   rcg_sdl_window = SDL_CreateWindow(title,SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,RCG_XRES*scale,RCG_YRES*scale,SDL_WINDOW_RESIZABLE);
-   rcg_sdl_renderer = SDL_CreateRenderer(rcg_sdl_window,-1,SDL_RENDERER_ACCELERATED);
-   SDL_SetRenderDrawColor(rcg_sdl_renderer,0,0,0,0);
-   rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer,SDL_PIXELFORMAT_RGBA32,SDL_TEXTUREACCESS_STREAMING,RCG_XRES,RCG_YRES);
-   SDL_SetTextureBlendMode(rcg_sdl_texture,SDL_BLENDMODE_NONE);
+   rcg_sdl_window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, RCG_XRES * scale, RCG_YRES * scale, SDL_WINDOW_RESIZABLE);
+   rcg_sdl_renderer = SDL_CreateRenderer(rcg_sdl_window, -1, SDL_RENDERER_ACCELERATED);
+   SDL_SetRenderDrawColor(rcg_sdl_renderer, 0, 0, 0, 0);
+   rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, RCG_XRES, RCG_YRES);
+   SDL_SetTextureBlendMode(rcg_sdl_texture, SDL_BLENDMODE_NONE);
 
-   rcg_framedelay = SDL_GetPerformanceFrequency()/RCG_FPS;
+   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
 
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
 
-   rcg_framebuffer = malloc(RCG_XRES*RCG_YRES);
-   memset(rcg_framebuffer,0,RCG_XRES*RCG_YRES);
+   rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
+   memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
 
    rcg_key_map[0x00] = RCG_KEY_NONE;
    rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
@@ -304,7 +304,7 @@ void RCG_init(const char *title)
    rcg_key_map[SDL_SCANCODE_7] = RCG_KEY_7;
    rcg_key_map[SDL_SCANCODE_8] = RCG_KEY_8;
    rcg_key_map[SDL_SCANCODE_9] = RCG_KEY_9;
-   
+
    rcg_key_map[SDL_SCANCODE_COMMA] = RCG_KEY_COMMA;
    rcg_key_map[SDL_SCANCODE_PERIOD] = RCG_KEY_PERIOD;
 
@@ -334,13 +334,13 @@ void RCG_init(const char *title)
 
 void RCG_update(void)
 {
-   rcg_frametime = SDL_GetPerformanceCounter()-rcg_framestart;
+   rcg_frametime = SDL_GetPerformanceCounter() - rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
-      SDL_Delay(((rcg_framedelay-rcg_frametime)*1000)/SDL_GetPerformanceFrequency());
+      SDL_Delay(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency());
    rcg_framestart = SDL_GetPerformanceCounter();
 
    rcg_mouse_wheel = 0;
-   memcpy(rcg_old_key_state,rcg_new_key_state,sizeof(rcg_new_key_state));
+   memcpy(rcg_old_key_state, rcg_new_key_state, sizeof(rcg_new_key_state));
 
    SDL_Event event;
    while(SDL_PollEvent(&event))
@@ -365,7 +365,7 @@ void RCG_update(void)
       case SDL_MOUSEBUTTONUP:
          if(event.button.state==SDL_RELEASED)
             rcg_new_key_state[rcg_mouse_map[event.button.button]] = 0;
-         break;       
+         break;
       case SDL_MOUSEWHEEL:
          rcg_mouse_wheel = event.wheel.y;
          break;
@@ -384,12 +384,12 @@ void RCG_render_present(void)
    //SDL textures need to be locked to copy data to them
    void *data;
    int stride;
-   SDL_LockTexture(rcg_sdl_texture,NULL,&data,&stride);
+   SDL_LockTexture(rcg_sdl_texture, NULL, &data, &stride);
 
    const RCG_color * restrict pal = RCG_palette();
    const uint8_t * restrict src = RCG_framebuffer();
    RCG_color * restrict pix = data;
-   for(int i = 0;i<RCG_XRES*RCG_YRES;i++)
+   for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
       pix[i] = pal[src[i]];
 
    SDL_UnlockTexture(rcg_sdl_texture);
@@ -400,7 +400,7 @@ void RCG_render_present(void)
    dst_rect.y = rcg_view_y;
    dst_rect.w = rcg_view_width;
    dst_rect.h = rcg_view_height;
-   SDL_RenderCopy(rcg_sdl_renderer,rcg_sdl_texture,NULL,&dst_rect);
+   SDL_RenderCopy(rcg_sdl_renderer, rcg_sdl_texture, NULL, &dst_rect);
 
    //Actually show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
@@ -448,27 +448,27 @@ int RCG_mouse_wheel_scroll(void)
 
 void RCG_mouse_pos(int *x, int *y)
 {
-   SDL_GetMouseState(x,y);
+   SDL_GetMouseState(x, y);
 
-   *x-=rcg_view_x;
-   *y-=rcg_view_y;
-   *x = *x/rcg_pixel_scale;
-   *y = *y/rcg_pixel_scale;
+   *x -= rcg_view_x;
+   *y -= rcg_view_y;
+   *x = *x / rcg_pixel_scale;
+   *y = *y / rcg_pixel_scale;
 
    if(*x>=RCG_XRES)
-     *x = RCG_XRES-1;
+      *x = RCG_XRES - 1;
    if(*y>=RCG_YRES)
-     *y = RCG_YRES-1;
+      *y = RCG_YRES - 1;
 
    if(*x<0)
-     *x = 0;
+      *x = 0;
    if(*y<0)
-     *y = 0;
+      *y = 0;
 }
 
 void RCG_mouse_relative_pos(int *x, int *y)
 {
-   SDL_GetRelativeMouseState(x,y);
+   SDL_GetRelativeMouseState(x, y);
 }
 
 uint8_t *RCG_framebuffer(void)
@@ -483,7 +483,7 @@ uint8_t *RCG_framebuffer(void)
 ///<C
 void RCG_draw_clear(uint8_t color)
 {
-   memset(rcg_framebuffer,color,RCG_XRES*RCG_YRES);
+   memset(rcg_framebuffer, color, RCG_XRES * RCG_YRES);
 }
 ///>
 
@@ -492,7 +492,7 @@ void RCG_draw_clear(uint8_t color)
 /// You might wonder why these two functions exist, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape is within certain constraints, it's faster to write a specialized function for drawing it.
 ///
 /// For example, we'll use these functions in the early sub chapters of the raycasting renderer for drawing solid colored walls.
-/// 
+///
 ///<C
 void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 {
@@ -513,16 +513,16 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
    if(y0<0)
       y0 = 0;
    if(y1>=RCG_YRES)
-      y1 = RCG_YRES-1;
+      y1 = RCG_YRES - 1;
 
    //Now, we draw the line
    // We access the framebuffer using a pointer, which we increment after every pixel written.
    // In my experience, the compiler optimizes code better if you access arrays by incrementing a pointer.
-   uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x];
-   for(int y = y0;y<=y1;y++)
+   uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x];
+   for(int y = y0; y<=y1; y++)
    {
       *dst = color;
-      dst+=RCG_XRES;
+      dst += RCG_XRES;
    }
 }
 ///>
@@ -537,17 +537,17 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
       x0 = x1;
       x1 = t;
    }
-	   
+
    if(y<0||y>=RCG_YRES||x0>=RCG_XRES||x1<0)
       return;
 
    if(x0<0)
       x0 = 0;
    if(x1>=RCG_XRES)
-      x1 = RCG_XRES-1;
+      x1 = RCG_XRES - 1;
 
-   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x0];
-   for(int x = x0;x<=x1;x++)
+   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x0];
+   for(int x = x0; x<=x1; x++)
       *(dst++) = color;
 }
 ///>
@@ -557,15 +557,15 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
 {
    //The offsets in the coordinates are to make sure the individual lines don't overlap
-   RCG_draw_line_horizontal(x,y,x+width,color);
-   RCG_draw_line_horizontal(x,y+height,x+width,color);
-   RCG_draw_line_vertical(x,y+1,y+height-1,color);
-   RCG_draw_line_vertical(x+width,y+1,y+height-1,color);
+   RCG_draw_line_horizontal(x, y, x + width, color);
+   RCG_draw_line_horizontal(x, y + height, x + width, color);
+   RCG_draw_line_vertical(x, y + 1, y + height - 1, color);
+   RCG_draw_line_vertical(x + width, y + 1, y + height - 1, color);
 }
 ///>
 
 /// RCG_draw_rectangle_fill() is a little more complicated since it requires clipping in two dimensions instead of one like for the lines.
-/// 
+///
 /// The clipping is admittedly more complicated than it needs to be, we are however going to reuse this clipping code when drawing sprites (hence the draw_start and draw_end instead of just a clipped width/height).
 ///<C
 void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
@@ -589,11 +589,11 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 
    //if the end coordinates are m above the width/height
    //we stop drawing the rectangle m pixels earlier
-   if(x+draw_end_x>RCG_XRES)
-      draw_end_x = width+(RCG_XRES-x-draw_end_x);
-   if(y+draw_end_y>RCG_YRES)
-      draw_end_y = height+(RCG_YRES-y-draw_end_y);
-    
+   if(x + draw_end_x>RCG_XRES)
+      draw_end_x = width + (RCG_XRES - x - draw_end_x);
+   if(y + draw_end_y>RCG_YRES)
+      draw_end_y = height + (RCG_YRES - y - draw_end_y);
+
    //Now we clamp the drawn position of the rectangle
    //Only clamping to 0 is necessary, the rest is taken care
    //of by the previous clipping
@@ -601,18 +601,18 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
    y = y<0?0:y;
 
    //Drawing is essentially the same as for the lines, just in two dimensions
-   //instead. Additionally we need to calculate 
+   //instead. Additionally we need to calculate
    //the amount to increment the pointer every line by (dst_tsep)
-   uint8_t * restrict dst = &RCG_framebuffer()[y*RCG_XRES+x];
-   int dst_step = RCG_XRES-(draw_end_x-draw_start_x);
-   for(int y1 = draw_start_y;y1<draw_end_y;y1++,dst+=dst_step)
-      for(int x1 = draw_start_x;x1<draw_end_x;x1++,dst++)
+   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
+   int dst_step = RCG_XRES - (draw_end_x - draw_start_x);
+   for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step)
+      for(int x1 = draw_start_x; x1<draw_end_x; x1++, dst++)
          *dst = color;
 }
 ///>
 ///
 /// Alternatively you could implement RCG_draw_rectangle_fill() by drawing horizontal lines for every y pixel of the rectangle.
-/// 
+///
 
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
@@ -623,57 +623,57 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    //Already fully inside? Skip the clipping
    if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
    {
-      int dx = x1-x0;
-      int dy = y1-y0;
+      int dx = x1 - x0;
+      int dy = y1 - y0;
 
       //p0 top
       if(y0<0)
       {
-         x0 = x0+(-y0*dx)/dy;
+         x0 = x0 + (-y0 * dx) / dy;
          y0 = 0;
       }
-      //p0 left 
+      //p0 left
       if(x0<0)
       {
-         y0 = y0+(-x0*dy)/dx;
+         y0 = y0 + (-x0 * dy) / dx;
          x0 = 0;
       }
       //p0 bottom
       if(y0>=RCG_YRES)
       {
-         x0 = x0+((RCG_YRES-1-y0)*dx)/dy;
-         y0 = RCG_YRES-1;
+         x0 = x0 + ((RCG_YRES - 1 - y0) * dx) / dy;
+         y0 = RCG_YRES - 1;
       }
       //p0 right
       if(x0>=RCG_XRES)
       {
-         y0 = y0+((RCG_XRES-1-x0)*dy)/dx;
-         x0 = RCG_XRES-1;
+         y0 = y0 + ((RCG_XRES - 1 - x0) * dy) / dx;
+         x0 = RCG_XRES - 1;
       }
 
       //p1 top
       if(y1<0)
       {
-         x1 = x1+(-y1*dx)/dy;
+         x1 = x1 + (-y1 * dx) / dy;
          y1 = 0;
       }
-      //p1 left 
+      //p1 left
       if(x1<0)
       {
-         y1 = y1+(-x1*dy)/dx;
+         y1 = y1 + (-x1 * dy) / dx;
          x1 = 0;
       }
       //p1 bottom
       if(y1>=RCG_YRES)
       {
-         x1 = x1+((RCG_YRES-1-y1)*dx)/dy;
-         y1 = RCG_YRES-1;
+         x1 = x1 + ((RCG_YRES - 1 - y1) * dx) / dy;
+         y1 = RCG_YRES - 1;
       }
       //p1 right
       if(x1>=RCG_XRES)
       {
-         y1 = y1+((RCG_XRES-1-x1)*dy)/dx;
-         x1 = RCG_XRES-1;
+         y1 = y1 + ((RCG_XRES - 1 - x1) * dy) / dx;
+         x1 = RCG_XRES - 1;
       }
    }
 
@@ -681,8 +681,8 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
       return;
 
-   int dx = abs(x1-x0)+1;
-   int dy = abs(y1-y0)+1;
+   int dx = abs(x1 - x0) + 1;
+   int dy = abs(y1 - y0) + 1;
    if(dx>dy)
    {
       if(x1<x0)
@@ -690,7 +690,7 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
          int t = x0;
          x0 = x1;
          x1 = t;
-         
+
          t = y0;
          y0 = y1;
          y1 = t;
@@ -702,16 +702,16 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
       int error = 0;
       int count = dx;
 
-      uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x0];
+      uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x0];
       while(count--)
       {
          *(dst++) = color;
-         error+=dy;
+         error += dy;
 
          if(error>dx)
          {
-            dst+=change;
-            error-=dx;
+            dst += change;
+            error -= dx;
          }
       }
    }
@@ -722,7 +722,7 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
          int t = x0;
          x0 = x1;
          x1 = t;
-         
+
          t = y0;
          y0 = y1;
          y1 = t;
@@ -734,17 +734,17 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
       int error = 0;
       int count = dy;
 
-      uint8_t * restrict dst = &RCG_framebuffer()[y0*RCG_XRES+x0];
+      uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x0];
       while(count--)
       {
          *dst = color;
-         dst+=RCG_XRES;
-         error+=dx;
+         dst += RCG_XRES;
+         error += dx;
 
          if(error>dy)
          {
-            dst+=change;
-            error-=dy;
+            dst += change;
+            error -= dy;
          }
       }
    }
@@ -755,25 +755,25 @@ static void rcg_update_viewport(void)
    int window_width = 1;
    int window_height = 1;
 
-   SDL_GetWindowSize(rcg_sdl_window,&window_width,&window_height);
+   SDL_GetWindowSize(rcg_sdl_window, &window_width, &window_height);
 
-   float ratio = (float)window_width/(float)window_height;
+   float ratio = (float)window_width / (float)window_height;
 
-   if(ratio>(float)RCG_XRES/(float)RCG_YRES)
+   if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
       rcg_view_height = window_height;
-      rcg_view_width = ((float)RCG_XRES/(float)RCG_YRES)*(float)window_height;
+      rcg_view_width = ((float)RCG_XRES / (float)RCG_YRES) * (float)window_height;
    }
    else
    {
       rcg_view_width = window_width;
-      rcg_view_height = ((float)RCG_YRES/(float)RCG_XRES)*(float)window_width;
+      rcg_view_height = ((float)RCG_YRES / (float)RCG_XRES) * (float)window_width;
    }
 
-   rcg_view_x = (window_width-rcg_view_width)/2;
-   rcg_view_y = (window_height-rcg_view_height)/2;
+   rcg_view_x = (window_width - rcg_view_width) / 2;
+   rcg_view_y = (window_height - rcg_view_height) / 2;
 
-   rcg_pixel_scale = (float)rcg_view_width/(float)RCG_XRES;
+   rcg_pixel_scale = (float)rcg_view_width / (float)RCG_XRES;
 }
 
 /// Exercise
@@ -814,11 +814,11 @@ int main(int argc, char **argv)
 
       RCG_draw_clear(1);
 
-      RCG_draw_line_vertical(16,32,128,53);
-      RCG_draw_line_horizontal(64,64,192,123);
-      RCG_draw_rectangle(256,256,128,96,201);
-      RCG_draw_rectangle_fill(300,16,128,96,222);
-      RCG_draw_line(96,96,512,256,141);
+      RCG_draw_line_vertical(16, 32, 128, 53);
+      RCG_draw_line_horizontal(64, 64, 192, 123);
+      RCG_draw_rectangle(256, 256, 128, 96, 201);
+      RCG_draw_rectangle_fill(300, 16, 128, 96, 222);
+      RCG_draw_line(96, 96, 512, 256, 141);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
