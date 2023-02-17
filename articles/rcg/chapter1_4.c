@@ -1025,8 +1025,134 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    }
 }
 
+void RCG_draw_line2(int x0, int y0, int x1, int y1, uint8_t color)
+{
+   /*//Line fully outside of screen? Don't need to do anything
+   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_YRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
+      return;
+
+   //Already fully inside? Skip the clipping
+   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+   {
+      int dx = x1 - x0;
+      int dy = y1 - y0;
+
+      //p0 top
+      if(y0<0)
+      {
+         x0 = x0 + (-y0 * dx) / dy;
+         y0 = 0;
+      }
+      //p0 left
+      if(x0<0)
+      {
+         y0 = y0 + (-x0 * dy) / dx;
+         x0 = 0;
+      }
+      //p0 bottom
+      if(y0>=RCG_YRES)
+      {
+         x0 = x0 + ((RCG_YRES - 1 - y0) * dx) / dy;
+         y0 = RCG_YRES - 1;
+      }
+      //p0 right
+      if(x0>=RCG_XRES)
+      {
+         y0 = y0 + ((RCG_XRES - 1 - x0) * dy) / dx;
+         x0 = RCG_XRES - 1;
+      }
+
+      //p1 top
+      if(y1<0)
+      {
+         x1 = x1 + (-y1 * dx) / dy;
+         y1 = 0;
+      }
+      //p1 left
+      if(x1<0)
+      {
+         y1 = y1 + (-x1 * dy) / dx;
+         x1 = 0;
+      }
+      //p1 bottom
+      if(y1>=RCG_YRES)
+      {
+         x1 = x1 + ((RCG_YRES - 1 - y1) * dx) / dy;
+         y1 = RCG_YRES - 1;
+      }
+      //p1 right
+      if(x1>=RCG_XRES)
+      {
+         y1 = y1 + ((RCG_XRES - 1 - x1) * dy) / dx;
+         x1 = RCG_XRES - 1;
+      }
+   }
+
+   //Still outside? Don't draw anything
+   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+      return;*/
+
+   //RCG_fix16 dx = abs(x1-x0);
+   //RCG_fix16 dy = abs(y1-y0);
+   //RCG_fix16 prex = 65536-(x0
+
+   //int dx = abs(x1 - x0) + 1;
+   //int dy = abs(y1 - y0) + 1;
+
+   //4 Quadrants
+   RCG_fix16 dx = abs(x1-x0);
+   RCG_fix16 dy = abs(y1-y0);
+   RCG_fix16 dxs = (x1-x0);
+   RCG_fix16 dys = (y1-y0);
+   int x = x0/65536;
+   int y = y0/65536;
+   RCG_fix16 prex = 65536-(x0&65535);
+   RCG_fix16 prey = 65536-(y0&65535);
+   RCG_fix16 maxd = RCG_max(dx,dy);
+   RCG_fix16 mind = RCG_min(dx,dy);
+   RCG_fix16 dist = RCG_fix16_mul(prex,-maxd)+RCG_fix16_mul(prey,mind);
+
+   if(dxs<0&&dys<0)
+   {
+   }
+   else if(dxs<0&&dys>0)
+   {
+   }
+   else if(dxs>0&&dys<0)
+   {
+   }
+   else if(dxs>0&&dys>0)
+   {
+      if(dist<0)
+      {
+         x++;
+         dist+=maxd;
+      }
+      RCG_framebuffer()[y*RCG_XRES+x] = color;
+
+      for(int i = 0;i<maxd/65536;i++)
+      {
+         if(dist<0)
+         {
+            x++;
+            dist+=maxd;
+         }
+         y++;
+         dist-=mind;
+         RCG_framebuffer()[y*RCG_XRES+x] = color;
+      }
+   }
+   //Single point, i guess
+   else
+   {
+   }
+}
+
+
 /// Implementation
 /// ---------------------------
+///
+/// Fixed point multiplication and division are implemented by promoting the values to 64 bit integers, it can be implemented using 32bit math only, but for simplicities sake I won't do that here.
 ///
 ///<C
 RCG_fix16 RCG_fix16_mul(RCG_fix16 a, RCG_fix16 b)
@@ -1038,7 +1164,11 @@ RCG_fix16 RCG_fix16_div(RCG_fix16 a, RCG_fix16 b)
 {
    return (RCG_fix16)(((int64_t)a << 16) / b);
 }
-
+///>
+///
+/// RCG_fix16_cos is a simple LUT lookup 
+///
+///<C
 RCG_fix16 RCG_fix16_cos(RCG_fix16 a)
 {
    return rcg_cos_table[(a >> 3) & 8191];
@@ -1186,9 +1316,11 @@ int main(int argc, char **argv)
 
       RCG_draw_clear(1);
 
-      int x = RCG_fix16_cos(angle) / 256;
-      int y = RCG_fix16_sin(angle) / 256;
-      RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + x, RCG_YRES / 2 + y, 4);
+      //RCG_draw_line2(4*65536,4*65536,128*65536,96*65536,5);
+      int x = RCG_fix16_cos(angle);
+      int y = RCG_fix16_sin(angle);
+      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + x, RCG_YRES / 2 + y, 4);
+      RCG_draw_line2(RCG_XRES*32768, RCG_YRES*32768, RCG_XRES*32768 + x*128, RCG_YRES*32768 + y*128, 4);
       angle += 128;
 
       int angle_calc = RCG_fix16_atan2(x, y);
@@ -1216,7 +1348,7 @@ int main(int argc, char **argv)
 /// Download
 /// ---------------------------
 ///
-/// Download this articles source code here: [chapter1_3.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_3.c)
+/// Download this articles source code here: [chapter1_4.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_4.c)
 ///
 /// ---------------------------
 /// Article Series:
