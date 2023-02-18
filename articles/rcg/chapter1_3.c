@@ -617,7 +617,7 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
    //Line fully outside of screen? Don't need to do anything
-   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_YRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
+   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_XRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
       return;
 
    //Already fully inside? Skip the clipping

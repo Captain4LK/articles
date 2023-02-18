@@ -1027,124 +1027,125 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 
 void RCG_draw_line2(int x0, int y0, int x1, int y1, uint8_t color)
 {
-   /*//Line fully outside of screen? Don't need to do anything
-   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_YRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
+   RCG_fix16 xres = RCG_XRES*65536;
+   RCG_fix16 yres = RCG_YRES*65536;
+
+   //Line fully outside of screen? Don't need to do anything
+   if((x0<0&&x1<0)||(x0>=xres&&x1>=xres)||(y0<0&&y1<0)||(y0>=yres&&y1>=yres))
       return;
 
    //Already fully inside? Skip the clipping
-   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+   if(x0<0||x0>=xres||x1<0||x1>=xres||y0<0||y0>=yres||y1<0||y1>=yres)
    {
-      int dx = x1 - x0;
-      int dy = y1 - y0;
+      RCG_fix16 dx = x1 - x0;
+      RCG_fix16  dy = y1 - y0;
 
       //p0 top
       if(y0<0)
       {
-         x0 = x0 + (-y0 * dx) / dy;
+         x0 = x0+RCG_fix16_div(RCG_fix16_mul(-y0,dx),dy);
          y0 = 0;
       }
       //p0 left
       if(x0<0)
       {
-         y0 = y0 + (-x0 * dy) / dx;
+         y0 = y0+RCG_fix16_div(RCG_fix16_mul(x0,dy),dx);
          x0 = 0;
       }
       //p0 bottom
-      if(y0>=RCG_YRES)
+      if(y0>=yres)
       {
-         x0 = x0 + ((RCG_YRES - 1 - y0) * dx) / dy;
-         y0 = RCG_YRES - 1;
+         x0 = x0+RCG_fix16_div(RCG_fix16_mul(yres-65536-y0,dx),dy);
+         y0 = yres - 65536;
       }
       //p0 right
-      if(x0>=RCG_XRES)
+      if(x0>=xres)
       {
-         y0 = y0 + ((RCG_XRES - 1 - x0) * dy) / dx;
-         x0 = RCG_XRES - 1;
+         y0 = y0+RCG_fix16_div(RCG_fix16_mul(xres-65536-x0,dy),dx);
+         x0 = xres- 65536;
       }
 
       //p1 top
       if(y1<0)
       {
-         x1 = x1 + (-y1 * dx) / dy;
+         x1 = x1+RCG_fix16_div(RCG_fix16_mul(-y1,dx),dy);
          y1 = 0;
       }
       //p1 left
       if(x1<0)
       {
-         y1 = y1 + (-x1 * dy) / dx;
+         y1 = y1+RCG_fix16_div(RCG_fix16_mul(-x1,dy),dx);
          x1 = 0;
       }
       //p1 bottom
-      if(y1>=RCG_YRES)
+      if(y1>=yres)
       {
-         x1 = x1 + ((RCG_YRES - 1 - y1) * dx) / dy;
-         y1 = RCG_YRES - 1;
+         x1 = x1+RCG_fix16_div(RCG_fix16_mul(yres-65536-y1,dx),dy);
+         y1 = yres- 65536;
       }
       //p1 right
-      if(x1>=RCG_XRES)
+      if(x1>=xres)
       {
-         y1 = y1 + ((RCG_XRES - 1 - x1) * dy) / dx;
-         x1 = RCG_XRES - 1;
+         y1 = y1+RCG_fix16_div(RCG_fix16_mul(xres-65536-x1,dy),dx);
+         x1 = xres- 65536;
       }
    }
 
    //Still outside? Don't draw anything
-   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
-      return;*/
+   if(x0<0||x0>=xres||x1<0||x1>=xres||y0<0||y0>=yres||y1<0||y1>=yres)
+      return;
 
-   //RCG_fix16 dx = abs(x1-x0);
-   //RCG_fix16 dy = abs(y1-y0);
-   //RCG_fix16 prex = 65536-(x0
-
-   //int dx = abs(x1 - x0) + 1;
-   //int dy = abs(y1 - y0) + 1;
-
-   //4 Quadrants
    RCG_fix16 dx = abs(x1-x0);
    RCG_fix16 dy = abs(y1-y0);
-   RCG_fix16 dxs = (x1-x0);
-   RCG_fix16 dys = (y1-y0);
+   RCG_fix16 maxd = RCG_max(dx,dy);
+   RCG_fix16 mind = RCG_min(dx,dy);
    int x = x0/65536;
    int y = y0/65536;
    RCG_fix16 prex = 65536-(x0&65535);
    RCG_fix16 prey = 65536-(y0&65535);
-   RCG_fix16 maxd = RCG_max(dx,dy);
-   RCG_fix16 mind = RCG_min(dx,dy);
-   RCG_fix16 dist = RCG_fix16_mul(prex,-maxd)+RCG_fix16_mul(prey,mind);
+   RCG_fix16 error = RCG_fix16_mul(prex,-maxd)+RCG_fix16_mul(prey,mind);
+   int changex = 1;
+   if(x0>x1)
+      changex = -1;
+   int changey = RCG_XRES;
+   if(y0>y1)
+      changey = -RCG_XRES;
+   if(dx>dy)
+   {
+      int count = dx/65536;
 
-   if(dxs<0&&dys<0)
-   {
-   }
-   else if(dxs<0&&dys>0)
-   {
-   }
-   else if(dxs>0&&dys<0)
-   {
-   }
-   else if(dxs>0&&dys>0)
-   {
-      if(dist<0)
+      uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
+      *dst = color;
+      while(count--)
       {
-         x++;
-         dist+=maxd;
-      }
-      RCG_framebuffer()[y*RCG_XRES+x] = color;
-
-      for(int i = 0;i<maxd/65536;i++)
-      {
-         if(dist<0)
+         if(error>=0)
          {
-            x++;
-            dist+=maxd;
+            dst+=changey;
+            error-=dx;
          }
-         y++;
-         dist-=mind;
-         RCG_framebuffer()[y*RCG_XRES+x] = color;
+
+         dst+=changex;
+         error+=dy;
+         *dst = color;
       }
    }
-   //Single point, i guess
    else
    {
+      int count = dy/65536;
+
+      uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
+      while(count--)
+      {
+         if(error>=0)
+         {
+            dst+=changex;
+            error-=dy;
+         }
+
+         dst+=changey;
+         error+=dx;
+         *dst = color;
+      }
    }
 }
 
@@ -1310,6 +1311,7 @@ int main(int argc, char **argv)
 
    RCG_fix16 angle = 0;
 
+   RCG_fix16 dy = 0;
    while(RCG_running())
    {
       RCG_update();
@@ -1320,18 +1322,19 @@ int main(int argc, char **argv)
       int x = RCG_fix16_cos(angle);
       int y = RCG_fix16_sin(angle);
       //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + x, RCG_YRES / 2 + y, 4);
-      RCG_draw_line2(RCG_XRES*32768, RCG_YRES*32768, RCG_XRES*32768 + x*128, RCG_YRES*32768 + y*128, 4);
-      angle += 128;
+      //RCG_draw_line2(RCG_XRES*32768+32768, RCG_YRES*32768+32768,  RCG_XRES*32768 + x*128+32768, RCG_YRES*32768 + y*128+32768,5);
+      RCG_draw_line2(RCG_XRES*32768 + x*128+32768, RCG_YRES*32768 + y*128+32768,RCG_XRES*32768+32768, RCG_YRES*32768+32768,  5);
+      angle += 32;
 
       int angle_calc = RCG_fix16_atan2(x, y);
       int sx = RCG_fix16_cos(angle_calc) / 384;
       int sy = RCG_fix16_sin(angle_calc) / 384;
-      RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 5);
+      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 5);
 
       angle_calc = RCG_fix16_atan2_slow(x, y);
       sx = RCG_fix16_cos(angle_calc) / 512;
       sy = RCG_fix16_sin(angle_calc) / 512;
-      RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 177);
+      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 177);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
