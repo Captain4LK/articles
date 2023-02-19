@@ -1095,57 +1095,96 @@ void RCG_draw_line2(int x0, int y0, int x1, int y1, uint8_t color)
    if(x0<0||x0>=xres||x1<0||x1>=xres||y0<0||y0>=yres||y1<0||y1>=yres)
       return;
 
-   RCG_fix16 dx = abs(x1-x0);
-   RCG_fix16 dy = abs(y1-y0);
-   RCG_fix16 maxd = RCG_max(dx,dy);
-   RCG_fix16 mind = RCG_min(dx,dy);
-   int x = x0/65536;
-   int y = y0/65536;
-   RCG_fix16 prex = 65536-(x0&65535);
-   RCG_fix16 prey = 65536-(y0&65535);
-   RCG_fix16 error = RCG_fix16_mul(prex,-maxd)+RCG_fix16_mul(prey,mind);
-   int changex = 1;
-   if(x0>x1)
-      changex = -1;
-   int changey = RCG_XRES;
-   if(y0>y1)
-      changey = -RCG_XRES;
-   if(dx>dy)
+   RCG_fix16 dx = x1-x0;
+   RCG_fix16 dy = y1-y0;
+   int x = x0>>16;
+   int y = y0>>16;
+   RCG_fix16 db;
+   RCG_fix16 ds;
+   RCG_fix16 fracb;
+   RCG_fix16 fracs;
+   int steps;
+   int stepb;
+   int togox = (x1>>16)-(x0>>16);
+   int togoy = (y1>>16)-(y0>>16);
+   int togob;
+   int togos;
+
+   if(dx>=0)
    {
-      int count = dx/65536;
-
-      uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
-      *dst = color;
-      while(count--)
+      if(dy>=0)
       {
-         if(error>=0)
-         {
-            dst+=changey;
-            error-=dx;
-         }
-
-         dst+=changex;
-         error+=dy;
-         *dst = color;
+         db = dx;
+         ds = dy;
+         fracb = x0&65535;
+         fracs = y0&65535;
+         togob = togox;
+         togos = togoy;
+         stepb = 1;
+         steps = RCG_XRES;
+      }
+      else
+      {
+         db = dx;
+         ds = -dy;
+         fracb = x0&65535;
+         fracs = 65535-(y0&65535);
+         togob = togox;
+         togos = -togoy;
+         stepb = 1;
+         steps = -RCG_XRES;
       }
    }
    else
    {
-      int count = dy/65536;
-
-      uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
-      while(count--)
+      if(dy>=0)
       {
-         if(error>=0)
-         {
-            dst+=changex;
-            error-=dy;
-         }
-
-         dst+=changey;
-         error+=dx;
-         *dst = color;
+         db = -dx;
+         ds = dy;
+         fracb = 65535-(x0&65535);
+         fracs = y0&65535;
+         togob = -togox;
+         togos = togoy;
+         stepb = -1;
+         steps = RCG_XRES;
       }
+      else
+      {
+         db = -dx;
+         ds = -dy;
+         fracb = 65535-(x0&65535);
+         fracs = 65535-(y0&65535);
+         togob = -togox;
+         togos = -togoy;
+         stepb = -1;
+         steps = -RCG_XRES;
+      }
+   }
+
+   if(db<ds)
+   {
+      int32_t tmp;
+      tmp = db; db = ds; ds = tmp;
+      tmp = fracb; fracb = fracs; fracs = tmp;
+      tmp = togob; togob = togos; togos = tmp;
+      tmp = stepb; stepb = steps; steps = tmp;
+   }
+
+   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
+   RCG_fix16 dist = RCG_fix16_mul(fracs-32768,db)-RCG_fix16_mul(fracb-32768,ds);
+   int togo = togob;
+   while(togo>0)
+   {
+      if(dist>db/2)
+      {
+         dst+=steps;
+         dist-=db;
+      }
+
+      *dst = color;
+      dst+=stepb;
+      dist+=ds;
+      togo--;
    }
 }
 
@@ -1311,20 +1350,48 @@ int main(int argc, char **argv)
 
    RCG_fix16 angle = 0;
 
-   RCG_fix16 dy = 0;
    while(RCG_running())
    {
       RCG_update();
 
       RCG_draw_clear(1);
 
-      //RCG_draw_line2(4*65536,4*65536,128*65536,96*65536,5);
+      RCG_fix16 cos = RCG_fix16_cos(angle);
+      RCG_fix16 sin = RCG_fix16_sin(angle);
+
+      RCG_fix16 x0 = RCG_fix16_mul(64*65536,sin)+RCG_fix16_mul(-64*65536,cos);
+      RCG_fix16 y0 = RCG_fix16_mul(-64*65536,cos)+RCG_fix16_mul(-64*65536,sin);
+      RCG_fix16 x1 = RCG_fix16_mul(-64*65536,sin)+RCG_fix16_mul(-64*65536,cos);
+      RCG_fix16 y1 = RCG_fix16_mul(64*65536,cos)+RCG_fix16_mul(-64*65536,sin);
+      RCG_fix16 x2 = RCG_fix16_mul(-64*65536,sin)+RCG_fix16_mul(64*65536,cos);
+      RCG_fix16 y2 = RCG_fix16_mul(64*65536,cos)+RCG_fix16_mul(64*65536,sin);
+      RCG_fix16 x3 = RCG_fix16_mul(64*65536,sin)+RCG_fix16_mul(64*65536,cos);
+      RCG_fix16 y3 = RCG_fix16_mul(-64*65536,cos)+RCG_fix16_mul(64*65536,sin);
+
+      RCG_draw_line2(x0+RCG_XRES*32768,y0+RCG_YRES*32768,x1+RCG_XRES*32768,y1+RCG_YRES*32768,5);
+      RCG_draw_line2(x1+RCG_XRES*32768,y1+RCG_YRES*32768,x2+RCG_XRES*32768,y2+RCG_YRES*32768,5);
+      RCG_draw_line2(x2+RCG_XRES*32768,y2+RCG_YRES*32768,x3+RCG_XRES*32768,y3+RCG_YRES*32768,5);
+      RCG_draw_line2(x3+RCG_XRES*32768,y3+RCG_YRES*32768,x0+RCG_XRES*32768,y0+RCG_YRES*32768,5);
+
+      x0>>=16;
+      y0>>=16;
+      x1>>=16;
+      y1>>=16;
+      x2>>=16;
+      y2>>=16;
+      x3>>=16;
+      y3>>=16;
+      RCG_draw_line(x0+RCG_XRES/2+64,y0+RCG_YRES/2,x1+RCG_XRES/2+64,y1+RCG_YRES/2,5);
+      RCG_draw_line(x1+RCG_XRES/2+64,y1+RCG_YRES/2,x2+RCG_XRES/2+64,y2+RCG_YRES/2,5);
+      RCG_draw_line(x2+RCG_XRES/2+64,y2+RCG_YRES/2,x3+RCG_XRES/2+64,y3+RCG_YRES/2,5);
+      RCG_draw_line(x3+RCG_XRES/2+64,y3+RCG_YRES/2,x0+RCG_XRES/2+64,y0+RCG_YRES/2,5);
+
+      /*//RCG_draw_line2(4*65536,4*65536,128*65536,96*65536,5);
       int x = RCG_fix16_cos(angle);
       int y = RCG_fix16_sin(angle);
-      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + x, RCG_YRES / 2 + y, 4);
+      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + x/256, RCG_YRES / 2 + y/256, 5);
       //RCG_draw_line2(RCG_XRES*32768+32768, RCG_YRES*32768+32768,  RCG_XRES*32768 + x*128+32768, RCG_YRES*32768 + y*128+32768,5);
       RCG_draw_line2(RCG_XRES*32768 + x*128+32768, RCG_YRES*32768 + y*128+32768,RCG_XRES*32768+32768, RCG_YRES*32768+32768,  5);
-      angle += 32;
 
       int angle_calc = RCG_fix16_atan2(x, y);
       int sx = RCG_fix16_cos(angle_calc) / 384;
@@ -1334,7 +1401,9 @@ int main(int argc, char **argv)
       angle_calc = RCG_fix16_atan2_slow(x, y);
       sx = RCG_fix16_cos(angle_calc) / 512;
       sy = RCG_fix16_sin(angle_calc) / 512;
-      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 177);
+      //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 177);*/
+
+      angle += 32;
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();

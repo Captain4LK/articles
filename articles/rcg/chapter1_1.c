@@ -591,7 +591,7 @@ int main(int argc, char **argv)
 /// Article Series:
 ///   * [retro computer graphics - Introduction](/rcg/)
 ///   * retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input
-///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///   * [retro computer graphics - Chapter 1.2 - Framebuffer and color palette](/rcg/chapter1_2)
 ///   * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
 ///   * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
 ///
