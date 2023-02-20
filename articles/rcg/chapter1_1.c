@@ -127,9 +127,6 @@ void RCG_mouse_pos(int *x, int *y);
 
 //Writes how much the mouse was moved into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
-
-//Returns a pointer to the framebuffer
-uint8_t *RCG_framebuffer(void);
 ///>
 
 #endif
@@ -178,7 +175,6 @@ static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
 
-static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
 ///>
 ///
@@ -187,7 +183,7 @@ static int rcg_running = 1;
 ///
 /// Finally, some code! (I can barely believe it myself)
 ///
-/// We start of with RCG_init(), it creates a window, allocates the framebuffer and initializes some LUTs.
+/// We start of with RCG_init(), it creates a window and initializes some LUTs.
 ///<C
 void RCG_init(const char *title)
 {
@@ -224,11 +220,6 @@ void RCG_init(const char *title)
    rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
 ///>
 
-/// Additionally, we'll allocate the framebuffer and zero it out
-///<C
-   rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
-   memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
-///>
 /// Now we are going to initialize the key mapping arrays, just copy paste this code
 ///<C
    rcg_key_map[0x00] = RCG_KEY_NONE;
@@ -510,14 +501,6 @@ void RCG_mouse_pos(int *x, int *y)
 void RCG_mouse_relative_pos(int *x, int *y)
 {
    SDL_GetRelativeMouseState(x, y);
-}
-///>
-
-/// RCG_framebuffer(), very simple, just returns the framebuffer
-///<C
-uint8_t *RCG_framebuffer(void)
-{
-   return rcg_framebuffer;
 }
 ///>
 

@@ -14,7 +14,21 @@
 ///
 /// In this article we'll actually display something on the screen.
 ///
-/// Instead of using a 24bit color framebuffer directly, the framebuffer instead contains indices into an array of colors (the color palette). Since our framebuffer is an array of 8 bit integers, we have a maximum of 255 (0 is reserved for transparancy) color availible. This might seem too low to create 3d graphics, including basic lighting, at first, but in later articles we are going to discuss techniques helping to use these colors to their maximum.
+/// We are going to limit ourselves to 8 bits per pixel, or in other words 2^8 = 256 colors. However, simply using something like a rgb332 format isn't practical, since the selection of colors is quite bad: 
+///
+/// ![rgb332.png](/image/rgb332.png)
+///
+/// Instead we are going to do the same thing that was done in the early/mid 90, the framebuffer instead contains indices into a separate palette limiting us to an arbitrary selection of 256 24-bit (18-bit vga in the 90s) colors. This  gives us the possibility to adapt the color selection to the art style of the project; here are a few palettes from different games:
+///   
+/// | Game | Palette |
+/// |------|---------|
+/// | Doom | ![playpal.png](/image/playpal.png) |
+/// | Duke Nukem 3D | ![d3dpal.png](/image/d3dpal.png) |
+/// | Blood | ![bloodpal.png](/image/bloodpal.png) |
+///
+/// (Note): Games typically swapped palettes during gameplay (when taking damage, underwater etc.)
+///
+/// We'll need to write code for creating the framebuffer, displaying it and loading a palette.
 ///
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,12 +116,12 @@ void RCG_mouse_pos(int *x, int *y);
 //Writes how much the mouse was moved into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 
-//Returns a pointer to the framebuffer
-uint8_t *RCG_framebuffer(void);
-
 /// Function prototypes
 /// ---------------------------
 ///<C
+//Returns a pointer to the framebuffer
+uint8_t *RCG_framebuffer(void);
+
 //Loads a palette from a .hex file
 void RCG_palette_load(const char *path);
 
@@ -146,12 +160,14 @@ static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
 
-static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
 
 /// Variables
 /// ---------------------------
 ///<C
+//The framebuffer
+static uint8_t *rcg_framebuffer = NULL;
+
 //No need to store the actual color count, since it's limited to 256 colors
 //due to pixels being stored in an 8 bit integer
 static RCG_color rcg_palette[256];
@@ -160,9 +176,10 @@ static RCG_color rcg_palette[256];
 /// Implementation
 /// ---------------------------
 
+///
 /// First of, RCG_palette_load(). We'll use the very simple .hex format, it just stores one color per line in a hexadecimal format. On [lospec](https://lospec.com/palette-list) you can download any of the availible palettes in this format.
 ///
-/// In a more sophisticated game/engine, you should probably replace this with a different format (.gpl/.pal/a custom one)
+/// In a more sophisticated game/engine, you should probably replace this with a different format (.gpl/.pal/binary/a custom one)
 ///<C
 void RCG_palette_load(const char *path)
 {
@@ -171,8 +188,8 @@ void RCG_palette_load(const char *path)
       return;
 
    //Read the input file line by line and parse the input using sscanf()
-   //Alternatively you could not use sscanf() and parse the string manually,
-   //which due to the simple format of the file would be very easy to implement in this case
+   //Alternatively you could parse the string manually,
+   //which due to the simplicity of the format would be very easy to implement.
    char buffer[512];
    int color = 0;
    while(fgets(buffer, 512, f)&&color<256)
@@ -226,8 +243,24 @@ void RCG_init(const char *title)
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
 
-   rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
-   memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
+/// In RCG_init() we need to allocate the framebuffer and zero it out
+///
+/// ```C
+/// rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
+/// //...
+/// ```
+///
+///<C
+rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
+memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
+///>
+/// ```C
+/// //...
+/// rcg_key_map[0x00] = RCG_KEY_NONE;
+/// rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
+/// rcg_key_map[SDL_SCANCODE_B] = RCG_KEY_B;
+/// rcg_key_map[SDL_SCANCODE_C] = RCG_KEY_C;
+/// ```
 
    rcg_key_map[0x00] = RCG_KEY_NONE;
    rcg_key_map[SDL_SCANCODE_A] = RCG_KEY_A;
@@ -385,7 +418,7 @@ void RCG_render_present(void)
    int stride;
    SDL_LockTexture(rcg_sdl_texture, NULL, &data, &stride);
 
-/// Additionally, we'll change the loop from last time to instead copy the framebuffer to the texture,
+/// In RCG_render_pressent we'll additionally change the loop from last time to instead copy the framebuffer to the texture,
 /// mapping the 8 bit indices to palette colors.
 /// ```C
 /// void RCG_render_present(void)
@@ -478,10 +511,16 @@ void RCG_mouse_relative_pos(int *x, int *y)
    SDL_GetRelativeMouseState(x, y);
 }
 
+/// RCG_framebuffer() is very simple, just returning the framebuffer
+///<C
 uint8_t *RCG_framebuffer(void)
 {
    return rcg_framebuffer;
 }
+///>
+///
+/// And were done, that's all the code for this article
+///
 
 static void rcg_update_viewport(void)
 {
