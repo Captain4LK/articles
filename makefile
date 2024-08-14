@@ -3,7 +3,7 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 CC = gcc
 LD = gcc
 
-CFLAGS = -MD -MP -g -Wall -Wextra -std=c99 -pedantic
+CFLAGS = -MD -MP -g -Wall -Wextra -std=c99 -pedantic -Wshadow
 LIBS = -lSDL2
 
 SRC_ALL = $(call rwildcard,.,*.c)

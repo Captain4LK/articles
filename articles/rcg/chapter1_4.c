@@ -892,7 +892,7 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
 {
    //Line fully outside of screen? Don't need to do anything
-   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_YRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
+   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_XRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
       return;
 
    //Already fully inside? Skip the clipping
@@ -900,6 +900,7 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    {
       int dx = x1 - x0;
       int dy = y1 - y0;
+      printf("%d %d %d %d: %d %d\n",x0,y0,x1,y1,dx,dy);
 
       //p0 top
       if(y0<0)
@@ -955,6 +956,8 @@ void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
    //Still outside? Don't draw anything
    if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
       return;
+
+   printf("%d %d %d %d\n",x0,y0,x1,y1);
 
    int dx = abs(x1 - x0) + 1;
    int dy = abs(y1 - y0) + 1;
@@ -1049,7 +1052,7 @@ void RCG_draw_line2(int x0, int y0, int x1, int y1, uint8_t color)
       //p0 left
       if(x0<0)
       {
-         y0 = y0+RCG_fix16_div(RCG_fix16_mul(x0,dy),dx);
+         y0 = y0+RCG_fix16_div(RCG_fix16_mul(-x0,dy),dx);
          x0 = 0;
       }
       //p0 bottom
@@ -1348,7 +1351,7 @@ int main(int argc, char **argv)
    RCG_init("retro computer graphics - chapter 1.4");
    RCG_palette_load("freedoom.hex");
 
-   RCG_fix16 angle = 0;
+   RCG_fix16 angle = 16352-32*2;
 
    while(RCG_running())
    {
@@ -1368,10 +1371,10 @@ int main(int argc, char **argv)
       RCG_fix16 x3 = RCG_fix16_mul(64*65536,sin)+RCG_fix16_mul(64*65536,cos);
       RCG_fix16 y3 = RCG_fix16_mul(-64*65536,cos)+RCG_fix16_mul(64*65536,sin);
 
-      RCG_draw_line2(x0+RCG_XRES*32768,y0+RCG_YRES*32768,x1+RCG_XRES*32768,y1+RCG_YRES*32768,5);
-      RCG_draw_line2(x1+RCG_XRES*32768,y1+RCG_YRES*32768,x2+RCG_XRES*32768,y2+RCG_YRES*32768,5);
-      RCG_draw_line2(x2+RCG_XRES*32768,y2+RCG_YRES*32768,x3+RCG_XRES*32768,y3+RCG_YRES*32768,5);
-      RCG_draw_line2(x3+RCG_XRES*32768,y3+RCG_YRES*32768,x0+RCG_XRES*32768,y0+RCG_YRES*32768,5);
+      //RCG_draw_line2(x0,y0,x1,y1,5);
+      //RCG_draw_line2(x1,y1,x2,y2,5);
+      //RCG_draw_line2(x2,y2,x3,y3,5);
+      //RCG_draw_line2(x3,y3,x0,y0,5);
 
       x0>>=16;
       y0>>=16;
@@ -1381,10 +1384,10 @@ int main(int argc, char **argv)
       y2>>=16;
       x3>>=16;
       y3>>=16;
-      RCG_draw_line(x0+RCG_XRES/2+64,y0+RCG_YRES/2,x1+RCG_XRES/2+64,y1+RCG_YRES/2,5);
-      RCG_draw_line(x1+RCG_XRES/2+64,y1+RCG_YRES/2,x2+RCG_XRES/2+64,y2+RCG_YRES/2,5);
-      RCG_draw_line(x2+RCG_XRES/2+64,y2+RCG_YRES/2,x3+RCG_XRES/2+64,y3+RCG_YRES/2,5);
-      RCG_draw_line(x3+RCG_XRES/2+64,y3+RCG_YRES/2,x0+RCG_XRES/2+64,y0+RCG_YRES/2,5);
+      RCG_draw_line(x0+64,y0,x1+64,y1,5);
+      RCG_draw_line(x1+64,y1,x2+64,y2,5);
+      RCG_draw_line(x2+64,y2,x3+64,y3,5);
+      RCG_draw_line(x3+64,y3,x0+64,y0,5);
 
       /*//RCG_draw_line2(4*65536,4*65536,128*65536,96*65536,5);
       int x = RCG_fix16_cos(angle);
@@ -1403,7 +1406,8 @@ int main(int argc, char **argv)
       sy = RCG_fix16_sin(angle_calc) / 512;
       //RCG_draw_line(RCG_XRES / 2, RCG_YRES / 2, RCG_XRES / 2 + sx, RCG_YRES / 2 + sy, 177);*/
 
-      angle += 32;
+      //printf("%d\n",angle);
+      //angle += 32;
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();

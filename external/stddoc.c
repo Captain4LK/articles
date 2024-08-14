@@ -104,7 +104,7 @@ static void stddoc(FILE *in,FILE *out)
     //fprintf(out, "%s\n", "<link rel='stylesheet' href=\"/css/slate.css?\">");
     //fprintf(out, "%s\n", "<style>.backtick, .tilde {overflow-x: auto;} .longTOC {overflow-x: hidden;}</style>");
     struct { int on, prev; } stack[256] = {0}, *quote = stack;
-    for( char *buffer = (char *)malloc(16384); buffer; buffer = (free(buffer), 0))
+    for( char *buffer = (char *)malloc(16384); buffer; buffer = (free(buffer), NULL))
     for( int line = 1; fgets( buffer, 16383, in ) && !feof(in) ; ++line ) {
         const char *tag = strstr(buffer, "//""/");
         tag = tag ? tag : strstr(buffer, "##""#");

@@ -71,19 +71,18 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
-//Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r, g, b, a;
 }RCG_color;
 
-//Creates a sdl window, the framebuffer and initializes keycode LUTs
+//Creates a window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
 //Runs the sdl2 event loop, updates key states
 void RCG_update(void);
 
-//Returns, whether the app should keep running
+//Returns, whether the program should keep running
 int RCG_running(void);
 
 //Makes RCG_running return false
@@ -113,7 +112,7 @@ int RCG_mouse_wheel_scroll(void);
 //Writes the mouses pos into x and y
 void RCG_mouse_pos(int *x, int *y);
 
-//Writes how much the mouse was moved into x and y
+//Writes how much the mouse was moved since the last frame into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 
 /// Function prototypes
@@ -136,6 +135,7 @@ RCG_color *RCG_palette(void);
 
 static void rcg_update_viewport(void);
 
+//SDL2
 static SDL_Texture *rcg_sdl_texture;
 static SDL_Renderer *rcg_sdl_renderer;
 static SDL_Window *rcg_sdl_window;
@@ -194,11 +194,13 @@ void RCG_palette_load(const char *path)
    int color = 0;
    while(fgets(buffer, 512, f)&&color<256)
    {
-      unsigned r, g, b;
+      unsigned r = 0;
+      unsigned g = 0;
+      unsigned b = 0;
       sscanf(buffer, "%2x%2x%2x", &r, &g, &b);
-      rcg_palette[color].r = r;
-      rcg_palette[color].g = g;
-      rcg_palette[color].b = b;
+      rcg_palette[color].r = (uint8_t)r;
+      rcg_palette[color].g = (uint8_t)g;
+      rcg_palette[color].b = (uint8_t)b;
       rcg_palette[color].a = 255;
       color++;
    }
@@ -238,10 +240,10 @@ void RCG_init(const char *title)
    rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, RCG_XRES, RCG_YRES);
    SDL_SetTextureBlendMode(rcg_sdl_texture, SDL_BLENDMODE_NONE);
 
-   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
-
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
+
+   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
 
 /// In RCG_init() we need to allocate the framebuffer and zero it out
 ///
@@ -251,8 +253,8 @@ void RCG_init(const char *title)
 /// ```
 ///
 ///<C
-rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
-memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
+   rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
+   memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
 ///>
 /// ```C
 /// //...
@@ -368,7 +370,7 @@ void RCG_update(void)
 {
    rcg_frametime = SDL_GetPerformanceCounter() - rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
-      SDL_Delay(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency());
+      SDL_Delay((uint32_t)(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency()));
    rcg_framestart = SDL_GetPerformanceCounter();
 
    rcg_mouse_wheel = 0;
@@ -492,8 +494,8 @@ void RCG_mouse_pos(int *x, int *y)
 
    *x -= rcg_view_x;
    *y -= rcg_view_y;
-   *x = *x / rcg_pixel_scale;
-   *y = *y / rcg_pixel_scale;
+   *x = (int)((float)*x / rcg_pixel_scale);
+   *y = (int)((float)*y / rcg_pixel_scale);
 
    if(*x>=RCG_XRES)
       *x = RCG_XRES - 1;
@@ -534,12 +536,12 @@ static void rcg_update_viewport(void)
    if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
       rcg_view_height = window_height;
-      rcg_view_width = ((float)RCG_XRES / (float)RCG_YRES) * (float)window_height;
+      rcg_view_width = (int)(((float)RCG_XRES / (float)RCG_YRES) * (float)window_height);
    }
    else
    {
       rcg_view_width = window_width;
-      rcg_view_height = ((float)RCG_YRES / (float)RCG_XRES) * (float)window_width;
+      rcg_view_height = (int)(((float)RCG_YRES / (float)RCG_XRES) * (float)window_width);
    }
 
    rcg_view_x = (window_width - rcg_view_width) / 2;
@@ -586,7 +588,7 @@ int main(int argc, char **argv)
       RCG_update();
 
       for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
-         RCG_framebuffer()[i] = i;
+         RCG_framebuffer()[i] = (uint8_t)i;
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();

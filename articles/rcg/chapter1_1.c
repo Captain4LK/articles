@@ -12,9 +12,9 @@
 /// Introduction
 /// ---------------------------
 ///
-/// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed, take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
+/// The first chapter of this tutorial will guide you through making a basic framework for displaying retro graphics, no specific rendering techniques will be discussed. Take a look at the other chapters (if they are out yet) for that. My reference code for this chapter will be in a single-header style and is going to be used as the base for later chapters.
 ///
-/// This first article (with actual code) is going to be quite dry, since we'll do a lot of boilerplate code. If you want to skip this articles, take a look at the function prototypes below and download this articles source code at the bottom.
+/// This first article (with actual code) is going to be quite boring, since we'll do a lot of boilerplate code. If you want to skip this article, take a look at the function prototypes below and download this articles source code at the bottom.
 ///
 /// Headers
 /// ---------------------------
@@ -40,7 +40,7 @@
 #define RCG_XRES 640
 #define RCG_YRES 480
 
-#define RCG_FPS 30 //Yes, we are going to use fixed fps, it makes a lot of the math easier
+#define RCG_FPS 30 //We are going to stick to a fixed framerate, to keep things simple
 ///>
 ///
 /// Typedefs
@@ -77,7 +77,7 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
-//Additionally, we'll need a way to represent color, the rendering itself will be palettized, max 256 colors, but we'll still need to store a color palette in 24bit color
+//Additionally, we'll need a way to represent color. The rendering itself will be palettized, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r, g, b, a;
@@ -86,16 +86,16 @@ typedef struct
 /// Function prototypes
 /// ---------------------------
 ///
-/// These functions will be exposed to the user
+/// These functions we are going to use during this series
 ///
 ///<C
-//Creates a sdl window, the framebuffer and initializes keycode LUTs
+//Creates a window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
 //Runs the sdl2 event loop, updates key states
 void RCG_update(void);
 
-//Returns, whether the app should keep running
+//Returns, whether the program should keep running
 int RCG_running(void);
 
 //Makes RCG_running return false
@@ -125,7 +125,7 @@ int RCG_mouse_wheel_scroll(void);
 //Writes the mouses pos into x and y
 void RCG_mouse_pos(int *x, int *y);
 
-//Writes how much the mouse was moved into x and y
+//Writes how much the mouse was moved since the last frame into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 ///>
 
@@ -188,7 +188,7 @@ static int rcg_running = 1;
 void RCG_init(const char *title)
 {
 ///>
-/// First, some SDL2 boilerplate code, error checking and handling is left as an exercise for the reader
+/// First, some SDL2 boilerplate code, error checking and handling is left as an exercise to the reader
 ///<C
    Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
    SDL_Init(flags);
@@ -338,7 +338,7 @@ void RCG_update(void)
 ///<C
    rcg_frametime = SDL_GetPerformanceCounter() - rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
-      SDL_Delay(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency());
+      SDL_Delay((uint32_t)(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency()));
    rcg_framestart = SDL_GetPerformanceCounter();
 ///>
 
@@ -484,8 +484,8 @@ void RCG_mouse_pos(int *x, int *y)
 
    *x -= rcg_view_x;
    *y -= rcg_view_y;
-   *x = *x / rcg_pixel_scale;
-   *y = *y / rcg_pixel_scale;
+   *x = (int)((float)*x / rcg_pixel_scale);
+   *y = (int)((float)*y / rcg_pixel_scale);
 
    if(*x>=RCG_XRES)
       *x = RCG_XRES - 1;
@@ -506,7 +506,7 @@ void RCG_mouse_relative_pos(int *x, int *y)
 
 /// Remember rcg_update_viewport()? Here is it's implementation:
 ///
-/// When I said we wouldn't use floating point in the introduction, I guess I kinda lied. This function could easily be rewritten to use fixed point instead, though. This is the only place we'll use floating point numbers, I promise. All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
+/// All this function does is to calculate the ideal position and size of the framebuffer, based on the windows width/height and the internal resolution (RCG_XRES and RCG_YRES). Simply put, it makes the framebuffer fit into the window, adding some letterboxing if necessary.
 ///<C
 static void rcg_update_viewport(void)
 {
@@ -515,17 +515,17 @@ static void rcg_update_viewport(void)
 
    SDL_GetWindowSize(rcg_sdl_window, &window_width, &window_height);
 
-   float ratio = (float)window_width / (float)window_height;
+   //float ratio = (float)window_width / (float)window_height;
 
    if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
       rcg_view_height = window_height;
-      rcg_view_width = ((float)RCG_XRES / (float)RCG_YRES) * (float)window_height;
+      rcg_view_width = (int)(((float)RCG_XRES / (float)RCG_YRES) * (float)window_height);
    }
    else
    {
       rcg_view_width = window_width;
-      rcg_view_height = ((float)RCG_YRES / (float)RCG_XRES) * (float)window_width;
+      rcg_view_height = (int)(((float)RCG_YRES / (float)RCG_XRES) * (float)window_width);
    }
 
    rcg_view_x = (window_width - rcg_view_width) / 2;

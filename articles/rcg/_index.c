@@ -13,7 +13,7 @@
 /// ---------------------------
 ///
 /// What I expect you to know:
-/// - Fixed point numbers: I'm not going to use any floating point numbers in these articles
+/// - Fixed point numbers: I'm generally not going to use any floating point numbers
 ///
 /// Code style
 /// ---------------------------
@@ -46,9 +46,9 @@
 ///     * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///     * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
 ///     * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
-///     * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
-///     * [retro computer graphics - Chapter 1.5 - Image loading and drawing](part2.html)
-///     * [retro computer graphics - Chapter 1.6 - Colormaps: lighting and transparency](part3.html)
+///     * [retro computer graphics - Chapter 1.4 - Image loading and drawing](part2.html)
+///     * [retro computer graphics - Chapter 1.5 - Colormaps: lighting and transparency](part3.html)
+///     * [retro computer graphics - Chapter 1.6 - Basic math routines](/rcg/chapter1_4)
 ///   * Appendix
 ///     * [retro computer graphics - Appendix 0 - Assets](/rcg/appendix0)
 ///

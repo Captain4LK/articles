@@ -16,6 +16,7 @@
 ///
 /// The key to writing a fast software renderer is to both draw as few pixels as possible (minimize overdraw) and to do as little work as possible per pixel drawn. For this chapter specifically this means that clipping for the drawn shapes should happen outside of the actual drawing. How
 ///
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,19 +58,18 @@ typedef enum
    RCG_KEY_MAX,
 }RCG_key;
 
-//Additionally, we'll need a way to represent color, the rendering itself will be palletized, max 256 colors, but we'll still need to store a color palette in 24bit color
 typedef struct
 {
    uint8_t r, g, b, a;
 }RCG_color;
 
-//Creates a sdl window, the framebuffer and initializes keycode LUTs
+//Creates a window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
 
 //Runs the sdl2 event loop, updates key states
 void RCG_update(void);
 
-//Returns, whether the app should keep running
+//Returns, whether the program should keep running
 int RCG_running(void);
 
 //Makes RCG_running return false
@@ -99,10 +99,9 @@ int RCG_mouse_wheel_scroll(void);
 //Writes the mouses pos into x and y
 void RCG_mouse_pos(int *x, int *y);
 
-//Writes how much the mouse was moved into x and y
+//Writes how much the mouse was moved since the last frame into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 
-//Returns a pointer to the framebuffer
 uint8_t *RCG_framebuffer(void);
 
 //Loads a palette from a .hex file
@@ -140,6 +139,7 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 
 static void rcg_update_viewport(void);
 
+//SDL2
 static SDL_Texture *rcg_sdl_texture;
 static SDL_Renderer *rcg_sdl_renderer;
 static SDL_Window *rcg_sdl_window;
@@ -164,9 +164,12 @@ static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
 
-static uint8_t *rcg_framebuffer = NULL;
 static int rcg_running = 1;
 
+static uint8_t *rcg_framebuffer = NULL;
+
+//No need to store the actual color count, since it's limited to 256 colors
+//due to pixels being stored in an 8 bit integer
 static RCG_color rcg_palette[256];
 
 void RCG_palette_load(const char *path)
@@ -176,17 +179,19 @@ void RCG_palette_load(const char *path)
       return;
 
    //Read the input file line by line and parse the input using sscanf()
-   //Alternatively you could not use sscanf() and parse the string manually,
-   //which due to the simple format of the file would be very easy to implement in this case
+   //Alternatively you could parse the string manually,
+   //which due to the simplicity of the format would be very easy to implement.
    char buffer[512];
    int color = 0;
-   while(fgets(buffer, 512, f))
+   while(fgets(buffer, 512, f)&&color<256)
    {
-      unsigned r, g, b;
+      unsigned r = 0;
+      unsigned g = 0;
+      unsigned b = 0;
       sscanf(buffer, "%2x%2x%2x", &r, &g, &b);
-      rcg_palette[color].r = r;
-      rcg_palette[color].g = g;
-      rcg_palette[color].b = b;
+      rcg_palette[color].r = (uint8_t)r;
+      rcg_palette[color].g = (uint8_t)g;
+      rcg_palette[color].b = (uint8_t)b;
       rcg_palette[color].a = 255;
       color++;
    }
@@ -222,10 +227,10 @@ void RCG_init(const char *title)
    rcg_sdl_texture = SDL_CreateTexture(rcg_sdl_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, RCG_XRES, RCG_YRES);
    SDL_SetTextureBlendMode(rcg_sdl_texture, SDL_BLENDMODE_NONE);
 
-   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
-
    //Implementation and purpose will be discussed later in this article.
    rcg_update_viewport();
+
+   rcg_framedelay = SDL_GetPerformanceFrequency() / RCG_FPS;
 
    rcg_framebuffer = malloc(RCG_XRES * RCG_YRES);
    memset(rcg_framebuffer, 0, RCG_XRES * RCG_YRES);
@@ -336,7 +341,7 @@ void RCG_update(void)
 {
    rcg_frametime = SDL_GetPerformanceCounter() - rcg_framestart;
    if(rcg_framedelay>rcg_frametime)
-      SDL_Delay(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency());
+      SDL_Delay((uint32_t)(((rcg_framedelay - rcg_frametime) * 1000) / SDL_GetPerformanceFrequency()));
    rcg_framestart = SDL_GetPerformanceCounter();
 
    rcg_mouse_wheel = 0;
@@ -391,7 +396,6 @@ void RCG_render_present(void)
    RCG_color * restrict pix = data;
    for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
       pix[i] = pal[src[i]];
-
    SDL_UnlockTexture(rcg_sdl_texture);
 
    //Here we actually render the texture to the screen, using the rcg_view_* values calculated by rcg_update_viewport() for positioning the texture
@@ -402,7 +406,7 @@ void RCG_render_present(void)
    dst_rect.h = rcg_view_height;
    SDL_RenderCopy(rcg_sdl_renderer, rcg_sdl_texture, NULL, &dst_rect);
 
-   //Actually show what was rendered
+   //Actuall show what was rendered
    SDL_RenderPresent(rcg_sdl_renderer);
 }
 
@@ -452,8 +456,8 @@ void RCG_mouse_pos(int *x, int *y)
 
    *x -= rcg_view_x;
    *y -= rcg_view_y;
-   *x = *x / rcg_pixel_scale;
-   *y = *y / rcg_pixel_scale;
+   *x = (int)((float)*x / rcg_pixel_scale);
+   *y = (int)((float)*y / rcg_pixel_scale);
 
    if(*x>=RCG_XRES)
       *x = RCG_XRES - 1;
@@ -762,12 +766,12 @@ static void rcg_update_viewport(void)
    if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
       rcg_view_height = window_height;
-      rcg_view_width = ((float)RCG_XRES / (float)RCG_YRES) * (float)window_height;
+      rcg_view_width = (int)(((float)RCG_XRES / (float)RCG_YRES) * (float)window_height);
    }
    else
    {
       rcg_view_width = window_width;
-      rcg_view_height = ((float)RCG_YRES / (float)RCG_XRES) * (float)window_width;
+      rcg_view_height = (int)(((float)RCG_YRES / (float)RCG_XRES) * (float)window_width);
    }
 
    rcg_view_x = (window_width - rcg_view_width) / 2;
@@ -785,10 +789,10 @@ static void rcg_update_viewport(void)
 /// * Wikipedia articles:
 ///   * [Line drawing algorithm](https://en.wikipedia.org/wiki/Line_drawing_algorithm)
 ///   * [Digital differential analyzer](https://en.wikipedia.org/wiki/Digital_differential_analyzer_(graphics_algorithm))
-///   * [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm), the one I usually use
+///   * [Bresenham's line algorithm](https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm), the one I implemented here
 ///   * [Xiaolin Wu's line algorithm](https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm)
-/// * Bonus challenges:
-///   * clip the line before renderingt, getting rid of per pixel bounds checks (implemented in this chapters source code)
+/// * Bonus challenges (both implemented in this chapters source code):
+///   * clip the line before rendering, getting rid of per pixel bounds checks
 ///   * make a version that takes fixed point numbers as parameters and render the line with sub-pixel accuracy
 ///
 
