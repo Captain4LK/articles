@@ -14,12 +14,12 @@
 ///
 /// In this article we'll actually display something on the screen.
 ///
-/// We are going to limit ourselves to 8 bits per pixel, or in other words 2^8 = 256 colors. However, simply using something like a rgb332 format isn't practical, since the selection of colors is quite bad: 
+/// We are going to limit ourselves to 8 bits per pixel, or in other words 2^8 = 256 colors. However, simply using something like a rgb332 format isn't practical, since the selection of colors is quite bad:
 ///
 /// ![rgb332.png](/image/rgb332.png)
 ///
 /// Instead we are going to do the same thing that was done in the early/mid 90, the framebuffer instead contains indices into a separate palette limiting us to an arbitrary selection of 256 24-bit (18-bit vga in the 90s) colors. This  gives us the possibility to adapt the color selection to the art style of the project; here are a few palettes from different games:
-///   
+///
 /// | Game | Palette |
 /// |------|---------|
 /// | Doom | ![playpal.png](/image/playpal.png) |
@@ -580,6 +580,8 @@ static void rcg_update_viewport(void)
 ///<C
 int main(int argc, char **argv)
 {
+   //TODO(Captain4LK): use RvnicRaven palette instead
+   //TODO(Captain4LK): use custom textures for tutorials?
    RCG_init("retro computer graphics - chapter 1.2");
    RCG_palette_load("freedoom.hex");
 

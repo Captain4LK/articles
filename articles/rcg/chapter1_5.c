@@ -64,14 +64,12 @@ typedef struct
    uint8_t r, g, b, a;
 }RCG_color;
 
-//New
 typedef struct
 {
    int32_t width;
    int32_t height;
    uint8_t data[];
 }RCG_texture;
-//
 
 //Creates a window, the framebuffer and initializes keycode LUTs
 void RCG_init(const char *title);
@@ -140,10 +138,8 @@ void RCG_draw_rectangle_fill(int32_t x, int32_t y, int32_t width, int32_t height
 
 void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color);
 
-//New
 RCG_texture *RCG_texture_load(const char *path);
 void RCG_draw_texture(const RCG_texture *tex, int32_t x, int32_t y);
-//
 
 #endif
 
@@ -181,9 +177,20 @@ static int rcg_running = 1;
 
 static uint8_t *rcg_framebuffer = NULL;
 
+//New
+static uint8_t rcg_shade_table[32][256];
+static uint8_t rcg_trans_table[256][256];
+//
+
+
 //No need to store the actual color count, since it's limited to 256 colors
 //due to pixels being stored in an 8 bit integer
 static RCG_color rcg_palette[256];
+
+//New
+static void rcg_calculate_colormaps(void);
+static uint8_t rcg_pal_find_closest(uint8_t r, uint8_t g, uint8_t b);
+//
 
 void RCG_palette_load(const char *path)
 {
@@ -811,7 +818,6 @@ void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t co
    }
 }
 
-//New
 
 //As exercise?
 //My code is bad lol
@@ -925,6 +931,50 @@ void RCG_draw_texture(const RCG_texture *tex, int32_t x, int32_t y)
    for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step, src += src_step)
       for(int x1 = draw_start_x; x1<draw_end_x; x1++, src++, dst++)
          *dst = *src?*src:*dst;
+}
+
+//New
+static void rcg_calculate_colormaps(void)
+{
+   //shade table
+   for(int c = 0; c<256;c++)
+   {
+      for(int s = 0;s<32;s++)
+      {
+         //Don't fade transparency index
+         if(s==0)
+         {
+            rcg_shade_table[s][c] = 0;
+            continue;
+         }
+
+
+      }
+   }
+
+   //trans table
+}
+
+static uint8_t rcg_pal_find_closest(uint8_t r, uint8_t g, uint8_t b)
+{
+   int32_t best_dist = INT32_MAX;
+   uint8_t best_index = 0;
+
+   for(int i = 0; i<256; i++)
+   {
+      int32_t dist = 0;
+      dist += (r - rcg_palette[i].r) * (r - rcg_palette[i].r);
+      dist += (g - rcg_palette[i].g) * (g - rcg_palette[i].g);
+      dist += (b - rcg_palette[i].b) * (b - rcg_palette[i].b);
+
+      if(dist<best_dist)
+      {
+         best_index = (uint8_t)i;
+         best_dist = dist;
+      }
+   }
+
+   return best_index;
 }
 //
 

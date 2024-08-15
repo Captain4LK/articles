@@ -117,20 +117,22 @@ RCG_color *RCG_palette(void);
 void RCG_draw_clear(uint8_t color);
 
 //Draws a vertical line
-void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color);
+void RCG_draw_line_vertical(int32_t x, int32_t y0, int32_t y1, uint8_t color);
 
 //Draws a horizontal line
-void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color);
+void RCG_draw_line_horizontal(int32_t x0, int32_t y, int32_t x1, uint8_t color);
 
 //Draws a line between two points
-void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color);
+void RCG_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color);
 
 //Draws the outline of a rectangle
-void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color);
+void RCG_draw_rectangle(int32_t x, int32_t y, int32_t width, int32_t height, uint8_t color);
 
 //Draws a filled rectangle
-void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color);
+void RCG_draw_rectangle_fill(int32_t x, int32_t y, int32_t width, int32_t height, uint8_t color);
 ///>
+
+void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color);
 
 #endif
 
@@ -498,13 +500,13 @@ void RCG_draw_clear(uint8_t color)
 /// For example, we'll use these functions in the early sub chapters of the raycasting renderer for drawing solid colored walls.
 ///
 ///<C
-void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
+void RCG_draw_line_vertical(int32_t x, int32_t y0, int32_t y1, uint8_t color)
 {
    //Swap the two y coordinates if necessary, placing the upper (smaller) one in y0.
    //Doing this makes the later clipping simpler, since we can make assumptions about the values of y0 and y1.
    if(y0>y1)
    {
-      int t = y0;
+      int32_t t = y0;
       y0 = y1;
       y1 = t;
    }
@@ -533,11 +535,11 @@ void RCG_draw_line_vertical(int x, int y0, int y1, uint8_t color)
 
 /// RCG_draw_line_horizontal() is basically the same, with x and y coordinates being swapped.
 ///<C
-void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
+void RCG_draw_line_horizontal(int32_t x0, int32_t y, int32_t x1, uint8_t color)
 {
    if(x0>x1)
    {
-      int t = x0;
+      int32_t t = x0;
       x0 = x1;
       x1 = t;
    }
@@ -558,7 +560,7 @@ void RCG_draw_line_horizontal(int x0, int y, int x1, uint8_t color)
 
 /// RCG_draw_rectangle() can be implemented using our new vertical and horizontal line drawing functions.
 ///<C
-void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
+void RCG_draw_rectangle(int32_t x, int32_t y, int32_t width, int32_t height, uint8_t color)
 {
    //The offsets in the coordinates are to make sure the individual lines don't overlap
    RCG_draw_line_horizontal(x, y, x + width, color);
@@ -572,14 +574,14 @@ void RCG_draw_rectangle(int x, int y, int width, int height, uint8_t color)
 ///
 /// The clipping is admittedly more complicated than it needs to be, we are however going to reuse this clipping code when drawing sprites (hence the draw_start and draw_end instead of just a clipped width/height).
 ///<C
-void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
+void RCG_draw_rectangle_fill(int32_t x, int32_t y, int32_t width, int32_t height, uint8_t color)
 {
    //these variables are positions inside the drawn rectangle
    //i.e. width = draw_end_x-draw_start_x
-   int draw_start_y = 0;
-   int draw_start_x = 0;
-   int draw_end_x = width;
-   int draw_end_y = height;
+   int32_t draw_start_y = 0;
+   int32_t draw_start_x = 0;
+   int32_t draw_end_x = width;
+   int32_t draw_end_y = height;
 
    //Here we clip the source rectangle, changing
    //its width and height to fit the screen
@@ -618,139 +620,183 @@ void RCG_draw_rectangle_fill(int x, int y, int width, int height, uint8_t color)
 /// Alternatively you could implement RCG_draw_rectangle_fill() by drawing horizontal lines for every y pixel of the rectangle.
 ///
 
-void RCG_draw_line(int x0, int y0, int x1, int y1, uint8_t color)
+void RCG_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color)
 {
-   //Line fully outside of screen? Don't need to do anything
-   if((x0<0&&x1<0)||(x0>=RCG_XRES&&x1>=RCG_XRES)||(y0<0&&y1<0)||(y0>=RCG_YRES&&y1>=RCG_YRES))
-      return;
+   RCG_draw_line_fp(x0 * 256 + 128, y0 * 256 + 128, x1 * 256 + 128, y1 * 256 + 128, color);
+}
 
-   //Already fully inside? Skip the clipping
-   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+static uint8_t rcg_clip_outcode(int32_t l, int32_t u, int32_t r, int32_t d, int32_t x, int32_t y)
+{
+   uint8_t code = 0;
+
+   if(x<l)
+      code |= 1;
+   else if(x>r)
+      code |= 2;
+
+   if(y<u)
+      code |= 4;
+   if(y>d)
+      code |= 8;
+
+   return code;
+}
+
+static int rcg_clip_line(int32_t l, int32_t u, int32_t r, int32_t d, int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
+{
+   uint8_t code0 = rcg_clip_outcode(l, u, r, d, *x0, *y0);
+   uint8_t code1 = rcg_clip_outcode(l, u, r, d, *x1, *y1);
+
+   for(;;)
    {
-      int dx = x1 - x0;
-      int dy = y1 - y0;
+      if(code0==0&&code1==0)
+         return 1;
 
-      //p0 top
-      if(y0<0)
+      if(code0 & code1)
+         return 0;
+
+      uint8_t code_out = code1>code0?code1:code0;
+      int32_t x, y;
+      int32_t dx = *x1 - *x0;
+      int32_t dy = *y1 - *y0;
+
+      if(code_out & 8)
       {
-         x0 = x0 + (-y0 * dx) / dy;
-         y0 = 0;
+         x = (int32_t)(*x0 + ((int64_t)dx * (d - *y0)) / dy);
+         //x = *x0 + RvR_fix24_div(RvR_fix24_mul(dx, d - *y0), RvR_non_zero(dy));
+         y = d;
       }
-      //p0 left
-      if(x0<0)
+      else if(code_out & 4)
       {
-         y0 = y0 + (-x0 * dy) / dx;
-         x0 = 0;
+         x = (int32_t)(*x0 + ((int64_t)dx * (u - *y0)) / dy);
+         //x = *x0 + RvR_fix24_div(RvR_fix24_mul(dx, u - *y0), RvR_non_zero(dy));
+         y = u;
       }
-      //p0 bottom
-      if(y0>=RCG_YRES)
+      else if(code_out & 2)
       {
-         x0 = x0 + ((RCG_YRES - 1 - y0) * dx) / dy;
-         y0 = RCG_YRES - 1;
+         x = r;
+         y = (int32_t)(*y0 + ((int64_t)dy * (r - *x0)) / dx);
+         //y = *y0 + RvR_fix24_div(RvR_fix24_mul(dy, r - *x0), RvR_non_zero(dx));
       }
-      //p0 right
-      if(x0>=RCG_XRES)
+      else
       {
-         y0 = y0 + ((RCG_XRES - 1 - x0) * dy) / dx;
-         x0 = RCG_XRES - 1;
+         x = l;
+         y = (int32_t)(*y0 + ((int64_t)dy * (l - *x0)) / dx);
+         //y = *y0 + RvR_fix24_div(RvR_fix24_mul(dy, l - *x0), RvR_non_zero(dx));
       }
 
-      //p1 top
-      if(y1<0)
+      if(code_out==code0)
       {
-         x1 = x1 + (-y1 * dx) / dy;
-         y1 = 0;
+         *x0 = x;
+         *y0 = y;
+         code0 = rcg_clip_outcode(l, u, r, d, *x0, *y0);
       }
-      //p1 left
-      if(x1<0)
+      else
       {
-         y1 = y1 + (-x1 * dy) / dx;
-         x1 = 0;
-      }
-      //p1 bottom
-      if(y1>=RCG_YRES)
-      {
-         x1 = x1 + ((RCG_YRES - 1 - y1) * dx) / dy;
-         y1 = RCG_YRES - 1;
-      }
-      //p1 right
-      if(x1>=RCG_XRES)
-      {
-         y1 = y1 + ((RCG_XRES - 1 - x1) * dy) / dx;
-         x1 = RCG_XRES - 1;
+         *x1 = x;
+         *y1 = y;
+         code1 = rcg_clip_outcode(l, u, r, d, *x1, *y1);
       }
    }
 
-   //Still outside? Don't draw anything
-   if(x0<0||x0>=RCG_XRES||x1<0||x1>=RCG_XRES||y0<0||y0>=RCG_YRES||y1<0||y1>=RCG_YRES)
+   return 0;
+}
+
+void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color)
+{
+   if(!rcg_clip_line(0, 0, RCG_XRES * 256 - 1, RCG_YRES * 256 - 1, &x0, &y0, &x1, &y1))
       return;
 
-   int dx = abs(x1 - x0) + 1;
-   int dy = abs(y1 - y0) + 1;
-   if(dx>dy)
+   int32_t dx = x1 - x0;
+   int32_t dy = y1 - y0;
+   int32_t x = x0 >> 8;
+   int32_t y = y0 >> 8;
+   int32_t db;
+   int32_t ds;
+   int32_t fracb;
+   int32_t fracs;
+   int32_t steps;
+   int32_t stepb;
+   int32_t togox = (x1 >> 8) - (x0 >> 8);
+   int32_t togoy = (y1 >> 8) - (y0 >> 8);
+   int32_t togob;
+   int32_t togos;
+
+   if(dx>=0)
    {
-      if(x1<x0)
+      if(dy>=0)
       {
-         int t = x0;
-         x0 = x1;
-         x1 = t;
-
-         t = y0;
-         y0 = y1;
-         y1 = t;
+         db = dx;
+         ds = dy;
+         fracb = x0 & 255;
+         fracs = y0 & 255;
+         togob = togox;
+         togos = togoy;
+         stepb = 1;
+         steps = RCG_XRES;
       }
-
-      int change = RCG_XRES;
-      if(y0>y1)
-         change = -RCG_XRES;
-      int error = 0;
-      int count = dx;
-
-      uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x0];
-      while(count--)
+      else
       {
-         *(dst++) = color;
-         error += dy;
-
-         if(error>dx)
-         {
-            dst += change;
-            error -= dx;
-         }
+         db = dx;
+         ds = -dy;
+         fracb = x0 & 255;
+         fracs = 255 - (y0 & 255);
+         togob = togox;
+         togos = -togoy;
+         stepb = 1;
+         steps = -RCG_XRES;
       }
    }
    else
    {
-      if(y1<y0)
+      if(dy>=0)
       {
-         int t = x0;
-         x0 = x1;
-         x1 = t;
+         db = -dx;
+         ds = dy;
+         fracb = 255 - (x0 & 255);
+         fracs = y0 & 255;
+         togob = -togox;
+         togos = togoy;
+         stepb = -1;
+         steps = RCG_XRES;
+      }
+      else
+      {
+         db = -dx;
+         ds = -dy;
+         fracb = 255 - (x0 & 255);
+         fracs = 255 - (y0 & 255);
+         togob = -togox;
+         togos = -togoy;
+         stepb = -1;
+         steps = -RCG_XRES;
+      }
+   }
 
-         t = y0;
-         y0 = y1;
-         y1 = t;
+   if(db<ds)
+   {
+      int32_t tmp;
+      tmp = db; db = ds; ds = tmp;
+      tmp = fracb; fracb = fracs; fracs = tmp;
+      tmp = togob; togob = togos; togos = tmp;
+      tmp = stepb; stepb = steps; steps = tmp;
+   }
+
+   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
+   int32_t dist = (int32_t)((int64_t)(fracs - 128) * db - (int64_t)(fracb - 128) * ds) / 256;
+   int32_t togo = togob;
+   while(togo>0)
+   {
+      if(dist>db / 2)
+      {
+         dst += steps;
+         dist -= db;
       }
 
-      int change = 1;
-      if(x0>x1)
-         change = -1;
-      int error = 0;
-      int count = dy;
-
-      uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x0];
-      while(count--)
-      {
-         *dst = color;
-         dst += RCG_XRES;
-         error += dx;
-
-         if(error>dy)
-         {
-            dst += change;
-            error -= dy;
-         }
-      }
+      *dst = color;
+      dst += stepb;
+      dist += ds;
+      togo--;
    }
 }
 
