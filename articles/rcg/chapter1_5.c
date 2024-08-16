@@ -141,6 +141,12 @@ void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t co
 RCG_texture *RCG_texture_load(const char *path);
 void RCG_draw_texture(const RCG_texture *tex, int32_t x, int32_t y);
 
+//New
+uint8_t *RCG_shade_table(uint8_t light);
+uint8_t RCG_blend(uint8_t c0, uint8_t c1);
+void RCG_draw_texture_ex(const RCG_texture *tex, int32_t x, int32_t y, uint8_t shade, uint8_t trans);
+//
+
 #endif
 
 #ifdef RCG_IMPLEMENTATION
@@ -217,6 +223,8 @@ void RCG_palette_load(const char *path)
    }
 
    fclose(f);
+
+   rcg_calculate_colormaps();
 }
 
 RCG_color *RCG_palette(void)
@@ -934,6 +942,17 @@ void RCG_draw_texture(const RCG_texture *tex, int32_t x, int32_t y)
 }
 
 //New
+
+uint8_t *RCG_shade_table(uint8_t light)
+{
+   return rcg_shade_table[light];
+}
+
+uint8_t RCG_blend(uint8_t c0, uint8_t c1)
+{
+   return rcg_trans_table[c0][c1];
+}
+
 static void rcg_calculate_colormaps(void)
 {
    //shade table
@@ -942,17 +961,47 @@ static void rcg_calculate_colormaps(void)
       for(int s = 0;s<32;s++)
       {
          //Don't fade transparency index
-         if(s==0)
+         if(c==0)
          {
             rcg_shade_table[s][c] = 0;
             continue;
          }
 
+         uint8_t r = (uint8_t)((rcg_palette[c].r*(31-s))/31);
+         uint8_t g = (uint8_t)((rcg_palette[c].g*(31-s))/31);
+         uint8_t b = (uint8_t)((rcg_palette[c].b*(31-s))/31);
 
+         rcg_shade_table[s][c] = rcg_pal_find_closest(r,g,b);
+
+         rcg_shade_table[s][c] = rcg_pal_find_closest(r,g,b);
       }
    }
 
    //trans table
+   for(int i = 0;i<256;i++)
+   {
+      for(int j = 0;j<256;j++)
+      {
+         //0 is always fully transparent
+         if(i==0)
+         {
+            rcg_trans_table[i][j] = (uint8_t)j;
+            continue;
+         }
+         if(j==0)
+         {
+            rcg_trans_table[i][j] = (uint8_t)i;
+            continue;
+         }
+
+         int32_t t = 2048/3;
+         uint8_t r = (uint8_t)((t*rcg_palette[i].r+(1024-t)*rcg_palette[j].r)/1024);
+         uint8_t g = (uint8_t)((t*rcg_palette[i].g+(1024-t)*rcg_palette[j].g)/1024);
+         uint8_t b = (uint8_t)((t*rcg_palette[i].b+(1024-t)*rcg_palette[j].b)/1024);
+
+         rcg_trans_table[i][j] = rcg_pal_find_closest(r,g,b);
+      }
+   }
 }
 
 static uint8_t rcg_pal_find_closest(uint8_t r, uint8_t g, uint8_t b)
@@ -975,6 +1024,52 @@ static uint8_t rcg_pal_find_closest(uint8_t r, uint8_t g, uint8_t b)
    }
 
    return best_index;
+}
+
+void RCG_draw_texture_ex(const RCG_texture *tex, int32_t x, int32_t y, uint8_t shade, uint8_t trans)
+{
+   //Clip source
+   int32_t draw_start_y = 0;
+   int32_t draw_start_x = 0;
+   int32_t draw_end_x = tex->width;
+   int32_t draw_end_y = tex->height;
+   if(x<0)
+      draw_start_x = -x;
+   if(y<0)
+      draw_start_y = -y;
+   if(x + draw_end_x>RCG_XRES)
+      draw_end_x = tex->width + (RCG_XRES - x - draw_end_x);
+   if(y + draw_end_y>RCG_YRES)
+      draw_end_y = tex->height + (RCG_YRES - y - draw_end_y);
+
+   //Clip dst
+   x = x<0?0:x;
+   y = y<0?0:y;
+
+   const uint8_t *src = &tex->data[draw_start_x + draw_start_y * tex->width];
+   uint8_t *dst = &RCG_framebuffer()[x + y * RCG_XRES];
+   int32_t src_step = -(draw_end_x - draw_start_x) + tex->width;
+   int32_t dst_step = RCG_XRES - (draw_end_x - draw_start_x);
+   const uint8_t *col = RCG_shade_table(shade);
+
+   if(trans==0)
+   {
+      for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step, src += src_step)
+         for(int x1 = draw_start_x; x1<draw_end_x; x1++, src++, dst++)
+            *dst = *src?col[*src]:*dst;
+   }
+   else if(trans==1)
+   {
+      for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step, src += src_step)
+         for(int x1 = draw_start_x; x1<draw_end_x; x1++, src++, dst++)
+            *dst = RCG_blend(col[*src],*dst);
+   }
+   else
+   {
+      for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step, src += src_step)
+         for(int x1 = draw_start_x; x1<draw_end_x; x1++, src++, dst++)
+            *dst = RCG_blend(*dst,col[*src]);
+   }
 }
 //
 
@@ -1044,7 +1139,20 @@ int main(int argc, char **argv)
 
       RCG_draw_clear(1);
 
-      RCG_draw_texture(tex,16,16);
+      for(int y = 0;y<32;y++)
+      {
+         for(int x = 0;x<256;x++)
+            RCG_framebuffer()[(y+8)*RCG_XRES+x+8] = RCG_shade_table((uint8_t)y)[x];
+      }
+
+      for(int y = 0;y<256;y++)
+      {
+         for(int x = 0;x<256;x++)
+            RCG_framebuffer()[(y+48)*RCG_XRES+x+8] = RCG_blend((uint8_t)x,(uint8_t)y);
+      }
+
+      RCG_draw_texture(tex,280,8);
+      RCG_draw_texture_ex(tex,320,128,15,1);
 
       if(RCG_key_pressed(RCG_KEY_ESCAPE))
          RCG_quit();
