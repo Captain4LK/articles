@@ -16,10 +16,30 @@
 ///
 /// This first article (with actual code) is going to be quite boring, since we'll do a lot of boilerplate code. If you want to skip this article, take a look at the function prototypes below and download this articles source code at the bottom.
 ///
+/// The typical flow of a program will be as follows:
+/// ```C
+/// int main(void)
+/// {
+///    RCG_init("title");
+///
+///    //Init code goes here
+///
+///    while(RCG_running())
+///    {
+///      RCG_update();
+///
+///      //Update and rendering code goes here
+///
+///      RCG_render_present();
+///    }
+///    return 0;
+/// }
+/// ```
+///
 /// Headers
 /// ---------------------------
 ///
-/// First, we are going to need to include some headers:
+/// First, we need to include some headers:
 ///<C
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,20 +53,21 @@
 ///
 /// Additionally, we need to define some constants:
 ///
-/// All of these could be implemented as variables instead, but I want to keep the code simple.
+/// * The framebuffer resolution (RCG_XRES and RCG_YRES)
+/// * The target framerate (RCG_FPS), since we are going to stick to a fixed framerate
 ///
 ///<C
 //As God intended
 #define RCG_XRES 640
 #define RCG_YRES 480
 
-#define RCG_FPS 30 //We are going to stick to a fixed framerate, to keep things simple
+#define RCG_FPS 30
 ///>
 ///
 /// Typedefs
 /// ---------------------------
+/// I don't like using sdl scancodes directly, so we are going to remap keys to our own enums:
 ///<C
-//I don't like using sdl scancodes directly, so we are going to remap keys to our own enums
 typedef enum
 {
    RCG_KEY_NONE,
@@ -65,8 +86,10 @@ typedef enum
    RCG_KEY_LALT, RCG_KEY_RALT, RCG_KEY_INS,
    RCG_KEY_DEL, RCG_KEY_HOME, RCG_KEY_END, RCG_KEY_PGUP, RCG_KEY_PGDN,
    RCG_KEY_BACK, RCG_KEY_ESCAPE, RCG_KEY_RETURN, RCG_KEY_ENTER, RCG_KEY_PAUSE, RCG_KEY_SCROLL,
-   RCG_KEY_NP0, RCG_KEY_NP1, RCG_KEY_NP2, RCG_KEY_NP3, RCG_KEY_NP4, RCG_KEY_NP5, RCG_KEY_NP6, RCG_KEY_NP7, RCG_KEY_NP8, RCG_KEY_NP9,
-   RCG_KEY_NP_MUL, RCG_KEY_NP_DIV, RCG_KEY_NP_ADD, RCG_KEY_NP_SUB, RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
+   RCG_KEY_NP0, RCG_KEY_NP1, RCG_KEY_NP2, RCG_KEY_NP3, RCG_KEY_NP4,
+   RCG_KEY_NP5, RCG_KEY_NP6, RCG_KEY_NP7, RCG_KEY_NP8, RCG_KEY_NP9,
+   RCG_KEY_NP_MUL, RCG_KEY_NP_DIV, RCG_KEY_NP_ADD,
+   RCG_KEY_NP_SUB, RCG_KEY_NP_DECIMAL, RCG_KEY_NP_ENTER,
 
    //Mouse buttons
    //Functions for reading input won't differentiate between mouse and keyboard input.
@@ -76,8 +99,9 @@ typedef enum
    //Last element, will be used as size for mapping array
    RCG_KEY_MAX,
 }RCG_key;
-
-//Additionally, we'll need a way to represent color. The rendering itself will be palettized, but we'll still need to store a color palette in 24bit color
+///>
+/// We'll also need a way to represent color. The rendering itself will be palettized, but we still need to store a color palette in 24bit color:
+///<C
 typedef struct
 {
    uint8_t r, g, b, a;
@@ -86,7 +110,7 @@ typedef struct
 /// Function prototypes
 /// ---------------------------
 ///
-/// These functions we are going to use during this series
+/// These are functions we will be using during this series
 ///
 ///<C
 //Creates a window, the framebuffer and initializes keycode LUTs
@@ -137,7 +161,7 @@ void RCG_mouse_relative_pos(int *x, int *y);
 /// Helper function prototypes
 /// ---------------------------
 ///
-/// These are internal helper functions (identifiable by the lowercase prefix)
+/// We'll also need this helper function:
 ///
 ///<C
 //Calculates the framebuffers position in the window
@@ -170,7 +194,6 @@ static int rcg_view_height;
 static float rcg_pixel_scale;
 
 //fps limiting
-//These could be static variables in RCG_update() instead, but we might want to read them for benchmarking later
 static uint64_t rcg_frametime;
 static uint64_t rcg_framedelay;
 static uint64_t rcg_framestart;
@@ -377,6 +400,7 @@ void RCG_update(void)
       case SDL_MOUSEWHEEL:
          rcg_mouse_wheel = event.wheel.y;
          break;
+      //This can mean many things, but we'll just always update the viewport here
       case SDL_WINDOWEVENT:
          rcg_update_viewport();
          break;
@@ -482,11 +506,15 @@ void RCG_mouse_pos(int *x, int *y)
 {
    SDL_GetMouseState(x, y);
 
+   //We need to scale and translate the mouse pos
+   //based on the values calculated in rcg_update_viewport()
    *x -= rcg_view_x;
    *y -= rcg_view_y;
    *x = (int)((float)*x / rcg_pixel_scale);
    *y = (int)((float)*y / rcg_pixel_scale);
 
+   //Since we may have letterboxing, we also need
+   //to clamp the position to the framebuffer 
    if(*x>=RCG_XRES)
       *x = RCG_XRES - 1;
    if(*y>=RCG_YRES)
@@ -515,7 +543,7 @@ static void rcg_update_viewport(void)
 
    SDL_GetWindowSize(rcg_sdl_window, &window_width, &window_height);
 
-   //float ratio = (float)window_width / (float)window_height;
+   float ratio = (float)window_width / (float)window_height;
 
    if(ratio>(float)RCG_XRES / (float)RCG_YRES)
    {
@@ -576,7 +604,9 @@ int main(int argc, char **argv)
 ///   * retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input
 ///   * [retro computer graphics - Chapter 1.2 - Framebuffer and color palette](/rcg/chapter1_2)
 ///   * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
-///   * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.4 - Image loading and drawing](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.5 - Colormaps: lighting and transparency](/rcg/chapter1_5)
+///   * [retro computer graphics - Chapter 1.6 - Fixed point math](/rcg/chapter1_6)
 ///
 
 #endif

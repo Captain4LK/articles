@@ -26,7 +26,7 @@
 /// | Duke Nukem 3D | ![d3dpal.png](/image/d3dpal.png) |
 /// | Blood | ![bloodpal.png](/image/bloodpal.png) |
 ///
-/// (Note): Games typically swapped palettes during gameplay (when taking damage, underwater etc.)
+/// (Note): Games often swapped palettes during gameplay (when taking damage, underwater etc.)
 ///
 /// We'll need to write code for creating the framebuffer, displaying it and loading a palette.
 ///
@@ -115,8 +115,8 @@ void RCG_mouse_pos(int *x, int *y);
 //Writes how much the mouse was moved since the last frame into x and y
 void RCG_mouse_relative_pos(int *x, int *y);
 
-/// Function prototypes
-/// ---------------------------
+/// 
+/// To do this, we'll implement the following functions:
 ///<C
 //Returns a pointer to the framebuffer
 uint8_t *RCG_framebuffer(void);
@@ -162,10 +162,9 @@ static uint64_t rcg_framestart;
 
 static int rcg_running = 1;
 
-/// Variables
-/// ---------------------------
+/// 
+/// Internally, we'll need to store the framebuffer and the palette:
 ///<C
-//The framebuffer
 static uint8_t *rcg_framebuffer = NULL;
 
 //No need to store the actual color count, since it's limited to 256 colors
@@ -434,9 +433,10 @@ void RCG_render_present(void)
    for(int i = 0; i<RCG_XRES * RCG_YRES; i++)
       pix[i] = pal[src[i]];
 ///>
+/// In my experience this can actually take quite a lot of time. You could possibly do this using gpu shaders instead, the palette and the framebuffer being textures, a fragment shader remapping the colors appropiately.
+///
    SDL_UnlockTexture(rcg_sdl_texture);
 
-   //Here we actually render the texture to the screen, using the rcg_view_* values calculated by rcg_update_viewport() for positioning the texture
    SDL_Rect dst_rect;
    dst_rect.x = rcg_view_x;
    dst_rect.y = rcg_view_y;
@@ -513,7 +513,7 @@ void RCG_mouse_relative_pos(int *x, int *y)
    SDL_GetRelativeMouseState(x, y);
 }
 
-/// RCG_framebuffer() is very simple, just returning the framebuffer
+/// RCG_framebuffer() is very simple, just returning the framebuffer.
 ///<C
 uint8_t *RCG_framebuffer(void)
 {
@@ -574,16 +574,14 @@ static void rcg_update_viewport(void)
 /// Example code
 /// ---------------------------
 ///
-/// This articles example code loads a palette, a slightly modified version of the one used by freedoom to be exact (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times.
+/// This articles example code loads a palette, the one I use for my own games (you can find it in the Download section) and fills the framebuffer with ascending indices, repeating the palette many times.
 ///
 /// At this point you theoretically already have everything for making a basic game, the following chapters will lay the baseline for creating 3d graphics.
 ///<C
 int main(int argc, char **argv)
 {
-   //TODO(Captain4LK): use RvnicRaven palette instead
-   //TODO(Captain4LK): use custom textures for tutorials?
    RCG_init("retro computer graphics - chapter 1.2");
-   RCG_palette_load("freedoom.hex");
+   RCG_palette_load("rvnicraven.hex");
 
    while(RCG_running())
    {
@@ -607,7 +605,7 @@ int main(int argc, char **argv)
 /// Download
 /// ---------------------------
 ///
-/// [freedoom.hex](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/assets/freedoom.hex) [FREEDOOM]
+/// [freedoom.hex](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/assets/rvnicraven.hex) [rvnicraven]
 ///
 /// Download this articles source code here: [chapter1_2.c](https://raw.githubusercontent.com/Captain4LK/articles/master/articles/rcg/chapter1_2.c)
 ///
@@ -617,7 +615,9 @@ int main(int argc, char **argv)
 ///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
 ///   * retro computer graphics - Chapter 1.2 - Framebuffer and color palette
 ///   * [retro computer graphics - Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
-///   * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.4 - Image loading and drawing](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.5 - Colormaps: lighting and transparency](/rcg/chapter1_5)
+///   * [retro computer graphics - Chapter 1.6 - Fixed point math](/rcg/chapter1_6)
 ///
 
 #endif

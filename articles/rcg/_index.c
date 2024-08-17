@@ -44,11 +44,11 @@
 ///   * retro computer graphics - Introduction
 ///   * Chapter 1 - Basic framework
 ///     * [Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
-///     * [Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///     * [Chapter 1.2 - Frame buffer and color palette](/rcg/chapter1_2)
 ///     * [Chapter 1.3 - Basic drawing](/rcg/chapter1_3)
 ///     * [Chapter 1.4 - Image loading and drawing](/rcg/chapter1_4)
 ///     * [Chapter 1.5 - Colormaps: lighting and transparency](/rcg/chapter1_5)
-///     * [Chapter 1.6 - Basic math routines](/rcg/chapter1_6)
+///     * [Chapter 1.6 - Fixed point math](/rcg/chapter1_6)
 ///   * Appendix
 ///     * [retro computer graphics - Appendix 0 - Assets](/rcg/appendix0)
 ///
