@@ -1274,96 +1274,65 @@ void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t co
    if(!rcg_clip_line(0, 0, RCG_XRES * 256 - 1, RCG_YRES * 256 - 1, &x0, &y0, &x1, &y1))
       return;
 
+   //This is basically bresenham's line algorithm,
+   //with added fixed point precision
+   int32_t frac_x = x0&255;
+   int32_t frac_y = y0&255;
    int32_t dx = x1 - x0;
    int32_t dy = y1 - y0;
-   int32_t x = x0 >> 8;
-   int32_t y = y0 >> 8;
-   int32_t db;
-   int32_t ds;
-   int32_t fracb;
-   int32_t fracs;
-   int32_t steps;
-   int32_t stepb;
-   int32_t togox = (x1 >> 8) - (x0 >> 8);
-   int32_t togoy = (y1 >> 8) - (y0 >> 8);
-   int32_t togob;
-   int32_t togos;
+   int32_t step_x = 1;
+   int32_t step_y = RCG_XRES;
 
-   if(dx>=0)
+   if(dx<0)
    {
-      if(dy>=0)
+      frac_x = 255-(x0&255);
+      step_x = -1;
+   }
+   if(dy<0)
+   {
+      frac_y = 255-(y0&255);
+      step_y = -RCG_XRES;
+   }
+
+   dx = abs(dx);
+   dy = abs(dy);
+   if(dx<dy)
+   {
+      uint8_t *dst = &RCG_framebuffer()[(y0/256) * RCG_XRES + (x0/256)];
+      int32_t dist = (int32_t)((int64_t)(frac_x - 128) * dy - (int64_t)(frac_y - 128) * dx) / 256;
+      int32_t left = abs(y1/256-y0/256);
+
+      while(left--)
       {
-         db = dx;
-         ds = dy;
-         fracb = x0 & 255;
-         fracs = y0 & 255;
-         togob = togox;
-         togos = togoy;
-         stepb = 1;
-         steps = RCG_XRES;
-      }
-      else
-      {
-         db = dx;
-         ds = -dy;
-         fracb = x0 & 255;
-         fracs = 255 - (y0 & 255);
-         togob = togox;
-         togos = -togoy;
-         stepb = 1;
-         steps = -RCG_XRES;
+         if(dist>dy / 2)
+         {
+            dst += step_x;
+            dist -= dy;
+         }
+
+         *dst = color;
+         dst += step_y;
+         dist += dx;
       }
    }
    else
    {
-      if(dy>=0)
-      {
-         db = -dx;
-         ds = dy;
-         fracb = 255 - (x0 & 255);
-         fracs = y0 & 255;
-         togob = -togox;
-         togos = togoy;
-         stepb = -1;
-         steps = RCG_XRES;
-      }
-      else
-      {
-         db = -dx;
-         ds = -dy;
-         fracb = 255 - (x0 & 255);
-         fracs = 255 - (y0 & 255);
-         togob = -togox;
-         togos = -togoy;
-         stepb = -1;
-         steps = -RCG_XRES;
-      }
-   }
+      uint8_t *dst = &RCG_framebuffer()[(y0/256) * RCG_XRES + (x0/256)];
+      int32_t dist = (int32_t)((int64_t)(frac_y - 128) * dx - (int64_t)(frac_x - 128) * dy) / 256;
+      int32_t left = abs(x1/256-x0/256);
 
-   if(db<ds)
-   {
-      int32_t tmp;
-      tmp = db; db = ds; ds = tmp;
-      tmp = fracb; fracb = fracs; fracs = tmp;
-      tmp = togob; togob = togos; togos = tmp;
-      tmp = stepb; stepb = steps; steps = tmp;
-   }
-
-   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
-   int32_t dist = (int32_t)((int64_t)(fracs - 128) * db - (int64_t)(fracb - 128) * ds) / 256;
-   int32_t togo = togob;
-   while(togo>0)
-   {
-      if(dist>db / 2)
+      while(left--)
       {
-         dst += steps;
-         dist -= db;
-      }
+         if(dist>dx / 2)
+         {
+            dst += step_y;
+            dist -= dx;
+         }
 
-      *dst = color;
-      dst += stepb;
-      dist += ds;
-      togo--;
+         *dst = color;
+         dst += step_x;
+         dist += dy;
+      }
    }
 }
 

@@ -14,7 +14,7 @@
 ///
 /// In this article we'll implement a few simple drawing routines.
 ///
-/// The key to writing a fast software renderer is to both draw as few pixels as possible (minimize overdraw) and to do as little work as possible per pixel drawn. For this chapter specifically this means that clipping for the drawn shapes should happen outside of the actual drawing. How
+/// The key to writing a fast software renderer is to both draw as few pixels as possible (minimize overdraw) and to do as little work as possible per pixel drawn. For this chapter specifically, this means that clipping for the drawn shapes should happen outside of the actual drawing.
 ///
 
 #include <stdio.h>
@@ -110,8 +110,9 @@ void RCG_palette_load(const char *path);
 //Returns a pointer to the palette
 RCG_color *RCG_palette(void);
 
-/// Function prototypes
-/// ---------------------------
+/// 
+/// Specifically, we'll be implementing the following drawing routines:
+/// 
 ///<C
 //Clears the screen to the given color
 void RCG_draw_clear(uint8_t color);
@@ -485,7 +486,7 @@ uint8_t *RCG_framebuffer(void)
 /// Implementation
 /// ---------------------------
 ///
-/// RCG_draw_clear() can be implemented with a single call to memset. We won't use this function very often later, since we usually redraw the entire screen anyway, clearing it would only hurt performance.
+/// RCG_draw_clear() can be implemented with a single call to memset. We won't use this function very often later, since we usually redraw the entire screen anyway, clearing it would only waste time.
 ///<C
 void RCG_draw_clear(uint8_t color)
 {
@@ -493,9 +494,8 @@ void RCG_draw_clear(uint8_t color)
 }
 ///>
 
-/// RCG_draw_line_vertical() and RCG_draw_line_horizontal().
-///
-/// You might wonder why these two functions exist, when there is also going to be a general purpose line drawing function RCG_draw_line(). Generally, specialized drawing functions are usually faster than general purpose ones. If you know an often drawn shape is within certain constraints, it's faster to write a specialized function for drawing it.
+/// RCG_draw_line_vertical() and RCG_draw_line_horizontal(), you might wonder why these two functions exist, when there is also going to be a general purpose line drawing function RCG_draw_line().
+/// In my experience, purely horizontal and vertical lines are actually quite common, so we can write optimized special cases for them
 ///
 /// For example, we'll use these functions in the early sub chapters of the raycasting renderer for drawing solid colored walls.
 ///
@@ -511,19 +511,21 @@ void RCG_draw_line_vertical(int32_t x, int32_t y0, int32_t y1, uint8_t color)
       y1 = t;
    }
 
-   //Early out the line if it's completely outside the screen
+   //Early out if the line is completely outside the screen
    if(x<0||x>=RCG_XRES||y0>=RCG_YRES||y1<0)
       return;
 
-   //Clip the line to the screen boundaries
+   //Clip line to the screen boundaries
    if(y0<0)
       y0 = 0;
    if(y1>=RCG_YRES)
       y1 = RCG_YRES - 1;
 
    //Now, we draw the line
-   // We access the framebuffer using a pointer, which we increment after every pixel written.
-   // In my experience, the compiler optimizes code better if you access arrays by incrementing a pointer.
+   // We access the framebuffer using a pointer, 
+   // which we increment after every pixel written.
+   // In my experience, the compiler optimizes code better
+   // if you access arrays by incrementing a pointer.
    uint8_t * restrict dst = &RCG_framebuffer()[y0 * RCG_XRES + x];
    for(int y = y0; y<=y1; y++)
    {
@@ -533,7 +535,7 @@ void RCG_draw_line_vertical(int32_t x, int32_t y0, int32_t y1, uint8_t color)
 }
 ///>
 
-/// RCG_draw_line_horizontal() is basically the same, with x and y coordinates being swapped.
+/// RCG_draw_line_horizontal() is basically the same, with x and y coordinates swapped.
 ///<C
 void RCG_draw_line_horizontal(int32_t x0, int32_t y, int32_t x1, uint8_t color)
 {
@@ -552,6 +554,7 @@ void RCG_draw_line_horizontal(int32_t x0, int32_t y, int32_t x1, uint8_t color)
    if(x1>=RCG_XRES)
       x1 = RCG_XRES - 1;
 
+   //This could alternatively implemented using a memset call
    uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x0];
    for(int x = x0; x<=x1; x++)
       *(dst++) = color;
@@ -606,12 +609,13 @@ void RCG_draw_rectangle_fill(int32_t x, int32_t y, int32_t width, int32_t height
    x = x<0?0:x;
    y = y<0?0:y;
 
-   //Drawing is essentially the same as for the lines, just in two dimensions
+   //Drawing is essentially the same as for the horizontal lines, just in two dimensions
    //instead. Additionally we need to calculate
-   //the amount to increment the pointer every line by (dst_tsep)
+   //the amount to increment the pointer every line by (dst_step)
    uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
    int dst_step = RCG_XRES - (draw_end_x - draw_start_x);
    for(int y1 = draw_start_y; y1<draw_end_y; y1++, dst += dst_step)
+      //Again, this inner loop could be a call to memset instead
       for(int x1 = draw_start_x; x1<draw_end_x; x1++, dst++)
          *dst = color;
 }
@@ -620,6 +624,8 @@ void RCG_draw_rectangle_fill(int32_t x, int32_t y, int32_t width, int32_t height
 /// Alternatively you could implement RCG_draw_rectangle_fill() by drawing horizontal lines for every y pixel of the rectangle.
 ///
 
+//This just converts the coordinates to a 24.8 fixed point format,
+//so that RCG_draw_line_fp() can be used.
 void RCG_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color)
 {
    RCG_draw_line_fp(x0 * 256 + 128, y0 * 256 + 128, x1 * 256 + 128, y1 * 256 + 128, color);
@@ -642,6 +648,8 @@ static uint8_t rcg_clip_outcode(int32_t l, int32_t u, int32_t r, int32_t d, int3
    return code;
 }
 
+//This is just the Cohen–Sutherland algorithm
+//(https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm)
 static int rcg_clip_line(int32_t l, int32_t u, int32_t r, int32_t d, int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
 {
    uint8_t code0 = rcg_clip_outcode(l, u, r, d, *x0, *y0);
@@ -663,26 +671,22 @@ static int rcg_clip_line(int32_t l, int32_t u, int32_t r, int32_t d, int32_t *x0
       if(code_out & 8)
       {
          x = (int32_t)(*x0 + ((int64_t)dx * (d - *y0)) / dy);
-         //x = *x0 + RvR_fix24_div(RvR_fix24_mul(dx, d - *y0), RvR_non_zero(dy));
          y = d;
       }
       else if(code_out & 4)
       {
          x = (int32_t)(*x0 + ((int64_t)dx * (u - *y0)) / dy);
-         //x = *x0 + RvR_fix24_div(RvR_fix24_mul(dx, u - *y0), RvR_non_zero(dy));
          y = u;
       }
       else if(code_out & 2)
       {
          x = r;
          y = (int32_t)(*y0 + ((int64_t)dy * (r - *x0)) / dx);
-         //y = *y0 + RvR_fix24_div(RvR_fix24_mul(dy, r - *x0), RvR_non_zero(dx));
       }
       else
       {
          x = l;
          y = (int32_t)(*y0 + ((int64_t)dy * (l - *x0)) / dx);
-         //y = *y0 + RvR_fix24_div(RvR_fix24_mul(dy, l - *x0), RvR_non_zero(dx));
       }
 
       if(code_out==code0)
@@ -707,96 +711,65 @@ void RCG_draw_line_fp(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t co
    if(!rcg_clip_line(0, 0, RCG_XRES * 256 - 1, RCG_YRES * 256 - 1, &x0, &y0, &x1, &y1))
       return;
 
+   //This is basically bresenham's line algorithm,
+   //with added fixed point precision
+   int32_t frac_x = x0&255;
+   int32_t frac_y = y0&255;
    int32_t dx = x1 - x0;
    int32_t dy = y1 - y0;
-   int32_t x = x0 >> 8;
-   int32_t y = y0 >> 8;
-   int32_t db;
-   int32_t ds;
-   int32_t fracb;
-   int32_t fracs;
-   int32_t steps;
-   int32_t stepb;
-   int32_t togox = (x1 >> 8) - (x0 >> 8);
-   int32_t togoy = (y1 >> 8) - (y0 >> 8);
-   int32_t togob;
-   int32_t togos;
+   int32_t step_x = 1;
+   int32_t step_y = RCG_XRES;
 
-   if(dx>=0)
+   if(dx<0)
    {
-      if(dy>=0)
+      frac_x = 255-(x0&255);
+      step_x = -1;
+   }
+   if(dy<0)
+   {
+      frac_y = 255-(y0&255);
+      step_y = -RCG_XRES;
+   }
+
+   dx = abs(dx);
+   dy = abs(dy);
+   if(dx<dy)
+   {
+      uint8_t *dst = &RCG_framebuffer()[(y0/256) * RCG_XRES + (x0/256)];
+      int32_t dist = (int32_t)(((int64_t)(frac_x - 128) * dy - (int64_t)(frac_y - 128) * dx) / 256);
+      int32_t left = abs(y1/256-y0/256);
+
+      while(left--)
       {
-         db = dx;
-         ds = dy;
-         fracb = x0 & 255;
-         fracs = y0 & 255;
-         togob = togox;
-         togos = togoy;
-         stepb = 1;
-         steps = RCG_XRES;
-      }
-      else
-      {
-         db = dx;
-         ds = -dy;
-         fracb = x0 & 255;
-         fracs = 255 - (y0 & 255);
-         togob = togox;
-         togos = -togoy;
-         stepb = 1;
-         steps = -RCG_XRES;
+         if(dist>dy / 2)
+         {
+            dst += step_x;
+            dist -= dy;
+         }
+
+         *dst = color;
+         dst += step_y;
+         dist += dx;
       }
    }
    else
    {
-      if(dy>=0)
-      {
-         db = -dx;
-         ds = dy;
-         fracb = 255 - (x0 & 255);
-         fracs = y0 & 255;
-         togob = -togox;
-         togos = togoy;
-         stepb = -1;
-         steps = RCG_XRES;
-      }
-      else
-      {
-         db = -dx;
-         ds = -dy;
-         fracb = 255 - (x0 & 255);
-         fracs = 255 - (y0 & 255);
-         togob = -togox;
-         togos = -togoy;
-         stepb = -1;
-         steps = -RCG_XRES;
-      }
-   }
+      uint8_t *dst = &RCG_framebuffer()[(y0/256) * RCG_XRES + (x0/256)];
+      int32_t dist = (int32_t)(((int64_t)(frac_y - 128) * dx - (int64_t)(frac_x - 128) * dy) / 256);
+      int32_t left = abs(x1/256-x0/256);
 
-   if(db<ds)
-   {
-      int32_t tmp;
-      tmp = db; db = ds; ds = tmp;
-      tmp = fracb; fracb = fracs; fracs = tmp;
-      tmp = togob; togob = togos; togos = tmp;
-      tmp = stepb; stepb = steps; steps = tmp;
-   }
-
-   uint8_t * restrict dst = &RCG_framebuffer()[y * RCG_XRES + x];
-   int32_t dist = (int32_t)((int64_t)(fracs - 128) * db - (int64_t)(fracb - 128) * ds) / 256;
-   int32_t togo = togob;
-   while(togo>0)
-   {
-      if(dist>db / 2)
+      while(left--)
       {
-         dst += steps;
-         dist -= db;
-      }
+         if(dist>dx / 2)
+         {
+            dst += step_y;
+            dist -= dx;
+         }
 
-      *dst = color;
-      dst += stepb;
-      dist += ds;
-      togo--;
+         *dst = color;
+         dst += step_x;
+         dist += dy;
+      }
    }
 }
 
@@ -829,7 +802,9 @@ static void rcg_update_viewport(void)
 /// Exercise
 /// ---------------------------
 ///
-/// You might have noticed that I didn't cover RCG_draw_line() in the last section. That's because it will be your exercise for this article. Don't worry, the source code of this article has an implementation, too, if you are too lazy to do it yourself.
+/// You might have noticed that I didn't cover RCG_draw_line() in the last section.
+/// That's because it will be your exercise for this article.
+/// Don't worry, the source code of this article has an implementation, too, if you are too lazy to do it yourself, or simply struggle implementing it.
 ///
 /// Notes:
 /// * Wikipedia articles:
@@ -856,7 +831,7 @@ static void rcg_update_viewport(void)
 int main(int argc, char **argv)
 {
    RCG_init("retro computer graphics - chapter 1.3");
-   RCG_palette_load("freedoom.hex");
+   RCG_palette_load("rvnicraven.hex");
 
    while(RCG_running())
    {
@@ -891,9 +866,11 @@ int main(int argc, char **argv)
 /// Article Series:
 ///   * [retro computer graphics - Introduction](/rcg/)
 ///   * [retro computer graphics - Chapter 1.1 - Initial setup: graphics output and input](/rcg/chapter1_1)
-///   * [retro computer graphics - Chapter 1.2 - Color palettes](/rcg/chapter1_2)
+///   * [retro computer graphics - Chapter 1.2 - Framebuffer and color palette](/rcg/chapter1_2)
 ///   * retro computer graphics - Chapter 1.3 - Basic drawing
-///   * [retro computer graphics - Chapter 1.4 - Basic math routines](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.4 - Image loading and drawing](/rcg/chapter1_4)
+///   * [retro computer graphics - Chapter 1.5 - Colormaps: lighting and transparency](/rcg/chapter1_5)
+///   * [retro computer graphics - Chapter 1.6 - Fixed point math](/rcg/chapter1_6)
 ///
 
 #endif
